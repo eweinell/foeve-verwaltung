@@ -1,0 +1,33 @@
+# Secrets & Konfiguration — niemals committen (CLAUDE.md Regel 9)
+.env
+.env.*
+!.env.example
+*.htpasswd
+
+# Composer
+/vendor/
+
+# Laufzeitdaten
+/var/
+*.log
+
+# Uploads / erzeugte Dateien
+/public/uploads/
+
+# PHPUnit / Tools
+.phpunit.result.cache
+.phpunit.cache/
+/coverage/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.iml
+
+# Betriebssystem
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Claude Code (lokale Einstellungen)
+.claude/settings.local.json
