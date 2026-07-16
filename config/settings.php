@@ -33,6 +33,10 @@ return [
         'absender_adresse' => $_ENV['MAIL_ABSENDER_ADRESSE'] ?? '',
         'absender_name'    => $_ENV['MAIL_ABSENDER_NAME'] ?? '',
     ],
+    'captcha' => [
+        'sitekey' => $_ENV['TRUSTCAPTCHA_SITEKEY'] ?? '',
+        'secret'  => $_ENV['TRUSTCAPTCHA_SECRET'] ?? '',
+    ],
     'session' => [
         'secure' => $bool('SESSION_SECURE', true),
     ],

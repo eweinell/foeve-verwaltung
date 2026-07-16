@@ -1,0 +1,21 @@
+{% extends 'layout.twig' %}
+{% block titel %}Antrag{% endblock %}
+{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block inhalt %}
+    <div class="karte text-center">
+        <img src="/img/logo.png" alt="" style="height:40px">
+        {% if ergebnis == 'ok' %}
+            <h1 style="margin-top:12px">Vielen Dank!</h1>
+            <div class="alert alert-success">Ihr Antrag ist bestätigt und wird nun vom Vorstand geprüft.</div>
+            <p>Sie erhalten nach der Aufnahme eine Begrüßungs-E-Mail.</p>
+        {% elseif ergebnis == 'schon' %}
+            <h1 style="margin-top:12px">Bereits bestätigt</h1>
+            <div class="alert alert-info">Dieser Antrag wurde bereits bestätigt. Sie müssen nichts weiter tun.</div>
+        {% else %}
+            <h1 style="margin-top:12px">Link ungültig</h1>
+            <div class="alert alert-error">Der Bestätigungslink ist ungültig oder abgelaufen.</div>
+            <p>Bitte stellen Sie den Antrag ggf. erneut.</p>
+            <a href="/antrag" class="button">Zum Antragsformular</a>
+        {% endif %}
+    </div>
+{% endblock %}

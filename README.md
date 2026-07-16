@@ -5,7 +5,23 @@ Fachkonzept: [`KONZEPT.md`](KONZEPT.md), Grundregeln: [`CLAUDE.md`](CLAUDE.md),
 Arbeitspakete: [`briefings/`](briefings/).
 
 Stack: PHP 8.3+, MariaDB 10.6+, Slim 4 + Twig, PDO (kein ORM). Serverseitig
-gerendert, keine CDN-Einbindungen. Stand: **AP0 (Projektgerüst)**.
+gerendert, keine CDN-Einbindungen. Stand: **AP1 (Mitglieder & Anträge)**.
+
+## Was in AP1 enthalten ist
+
+- Datenmodell `mitglied`, `mitglied_version`, `antrag_rohdaten` (Migration 002),
+  Status-Lebenszyklus mit erzwungener Statusmaschine (§3.1).
+- Zentrale Anrede-/Adress-Logik (Briefanrede, Adresszeile, Postanschrift mit
+  Länderzeile) und Validierung (PLZ je Land DE/BE/NL, IBAN MOD-97 SEPA-weit).
+- Mitglieder-UI: Liste mit Suche/Filter/Pagination, Detailansicht mit Reitern,
+  **versionierte** Stammdaten-/Beitragsänderung, Änderungshistorie mit Revert,
+  Statusaktionen (Aktivieren mit Nummernvergabe ab 2000, Ablehnen, Kündigen,
+  Widerruf, Austritt), Flag „kein E-Mail-Kontakt".
+- Öffentliches Antragsformular `/antrag` mit Double-Opt-In (Bestätigung per
+  **POST**, GET zeigt nur den Button), IBAN verschlüsselt/maskiert, DOI-Mail mit
+  SEPA-Mandatstext über die Queue, Rate-Limit pro IP, optionaler TrustCaptcha.
+- Dashboard-Kachel „Offene Anträge"; `bin/wartung.php` verwirft unbestätigte
+  Anträge > 30 Tage.
 
 ## Was in AP0 enthalten ist
 

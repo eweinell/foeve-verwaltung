@@ -1,0 +1,118 @@
+{% extends 'layout.twig' %}
+{% block titel %}Mitglied werden{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf" style="justify-content:center">
+        <div class="text-center">
+            <img src="/img/logo.png" alt="" style="height:44px">
+            <h1 style="margin-top:12px">Aufnahmeantrag</h1>
+            <p class="untertitel">Förderverein Gymnasium Herzogenrath e.V.</p>
+        </div>
+    </div>
+
+    <div class="karte" style="max-width:720px;margin:0 auto">
+        <form method="post" action="/antrag" id="antragsformular">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+
+            <h2 style="margin-top:0">Ihre Angaben</h2>
+            <div class="form-raster">
+                <div class="form-group">
+                    <label for="anrede">Anrede</label>
+                    <select id="anrede" name="anrede">
+                        <option value="herr" {{ alt.anrede == 'herr' ? 'selected' : '' }}>Herr</option>
+                        <option value="frau" {{ alt.anrede == 'frau' ? 'selected' : '' }}>Frau</option>
+                        <option value="familie" {{ alt.anrede == 'familie' ? 'selected' : '' }}>Familie</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vorname">Vorname <span class="feld-hinweis">(bei Familien optional)</span></label>
+                    <input type="text" id="vorname" name="vorname" value="{{ alt.vorname }}">
+                </div>
+                <div class="form-group">
+                    <label for="nachname">Nachname</label>
+                    <input type="text" id="nachname" name="nachname" value="{{ alt.nachname }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefon">Telefon <span class="feld-hinweis">(optional)</span></label>
+                    <input type="tel" id="telefon" name="telefon" value="{{ alt.telefon }}">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="strasse">Straße und Hausnummer</label>
+                    <input type="text" id="strasse" name="strasse" value="{{ alt.strasse }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="land">Land</label>
+                    <select id="land" name="land">
+                        {% for code, name in laender %}
+                            <option value="{{ code }}" {{ (alt.land ?? 'DE') == code ? 'selected' : '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div class="adress-raster">
+                        <div>
+                            <label for="plz">PLZ</label>
+                            <input type="text" id="plz" name="plz" value="{{ alt.plz }}" required>
+                        </div>
+                        <div>
+                            <label for="ort">Ort</label>
+                            <input type="text" id="ort" name="ort" value="{{ alt.ort }}" required>
+                        </div>
+                    </div>
+                    <div class="feld-hinweis">DE: 5 Ziffern · BE: 4 Ziffern · NL: „1234 AB".</div>
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="email">E-Mail</label>
+                    <input type="email" id="email" name="email" value="{{ alt.email }}" required>
+                </div>
+            </div>
+
+            <h2>Jahresbeitrag</h2>
+            <div class="stapel">
+                {% for s in stufen %}
+                    <label class="radio-option">
+                        <input type="radio" name="jahresbeitrag" value="{{ s.wert }}" {{ alt.jahresbeitrag == s.wert ? 'checked' : '' }}>
+                        {{ s.label }}
+                    </label>
+                {% endfor %}
+                <label class="radio-option">
+                    <input type="radio" name="jahresbeitrag" value="wunsch" {{ alt.jahresbeitrag == 'wunsch' ? 'checked' : '' }}>
+                    Wunschbetrag
+                    <input type="text" name="jahresbeitrag_wunsch" value="{{ alt.jahresbeitrag_wunsch }}"
+                           placeholder="z. B. 45,00" style="max-width:140px;margin-left:12px"> €
+                </label>
+                <div class="feld-hinweis">Mindestens {{ beitrag_min|replace({'.': ','}) }} €, höchstens {{ beitrag_max|replace({'.': ','}) }} € pro Jahr.</div>
+            </div>
+
+            <h2>SEPA-Lastschriftmandat</h2>
+            <div class="form-raster">
+                <div class="form-group spanne-2">
+                    <label for="iban">IBAN</label>
+                    <input type="text" id="iban" name="iban" value="{{ alt.iban }}" placeholder="DE.. / BE.. / NL.." required>
+                    <div class="feld-hinweis">IBANs aus dem gesamten SEPA-Raum werden akzeptiert.</div>
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="kontoinhaber">Kontoinhaber <span class="feld-hinweis">(falls abweichend)</span></label>
+                    <input type="text" id="kontoinhaber" name="kontoinhaber" value="{{ alt.kontoinhaber }}">
+                </div>
+            </div>
+            <div class="info-box">
+                Mit dem Absenden ermächtigen Sie den Förderverein, den Mitgliedsbeitrag per SEPA-Lastschrift
+                einzuziehen. Den vollständigen Mandatstext erhalten Sie in der Bestätigungs-E-Mail.
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="mandat" name="mandat" {{ alt.mandat ? 'checked' : '' }} required>
+                <label for="mandat">Ich stimme dem SEPA-Lastschriftmandat zu.</label>
+            </div>
+
+            {% if captcha_aktiv %}
+                {# TrustCaptcha — CDN nur auf dieser öffentlichen Seite erlaubt (CSP-Ausnahme). #}
+                <trustcaptcha-component sitekey="{{ captcha_key }}"></trustcaptcha-component>
+                <script src="https://cdn.trustcaptcha.com/widget/v1/trustcaptcha.js" defer></script>
+            {% endif %}
+
+            <div class="abstand-oben">
+                <button type="submit" class="button button-voll">Antrag absenden</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

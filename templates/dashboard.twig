@@ -4,21 +4,46 @@
     <div class="seitenkopf">
         <div>
             <h1>Willkommen, {{ aktueller_benutzer.name }}</h1>
-            <p class="untertitel">Vereinsverwaltung — Grundgerüst (AP0). Die Fachmodule folgen in den nächsten Arbeitspaketen.</p>
+            <p class="untertitel">Vereinsverwaltung · {{ anzahl_aktiv }} aktive Mitglieder</p>
         </div>
     </div>
 
     <div class="karte">
-        <h2 style="margin-top:0">Nächste Schritte</h2>
+        <div class="seitenkopf" style="margin-bottom:12px">
+            <h2 style="margin:0">Offene Anträge
+                {% if anzahl_antraege > 0 %}<span class="badge badge-info">{{ anzahl_antraege }}</span>{% endif %}
+            </h2>
+            {% if anzahl_antraege > 0 %}<a href="/mitglieder?status=beantragt" class="button button-sekundaer button-klein">Alle anzeigen</a>{% endif %}
+        </div>
+
+        {% if offene_antraege is empty %}
+            <p class="feld-hinweis">Zurzeit liegen keine bestätigten Anträge zur Prüfung vor.</p>
+        {% else %}
+            <div class="tabelle-huelle">
+                <table class="daten">
+                    <thead><tr><th>Eingegangen</th><th>Name</th><th>Ort</th><th class="num">Beitrag</th><th></th></tr></thead>
+                    <tbody>
+                        {% for a in offene_antraege %}
+                            <tr>
+                                <td class="mono">{{ (a.bestaetigt_am ?? a.created_at)|date('d.m.Y') }}</td>
+                                <td>{{ a.anrede == 'familie' ? 'Familie ' ~ a.nachname : (a.vorname ? a.vorname ~ ' ' ~ a.nachname : a.nachname) }}</td>
+                                <td>{{ a.plz }} {{ a.ort }}{% if a.land != 'DE' %} ({{ a.land }}){% endif %}</td>
+                                <td class="num">{{ '%.2f'|format(a.jahresbeitrag)|replace({'.': ','}) }} €</td>
+                                <td><a href="/mitglieder/{{ a.id }}" class="button button-klein">Prüfen</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="karte">
         <div class="info-box">
             <strong>Hinweis:</strong> Sichern Sie Ihr Konto über
-            <a href="/profil">Profil &amp; Zwei-Faktor</a>. Als Administrator verwalten Sie unter
-            <a href="/einstellungen">Einstellungen</a> Benutzer, Drosselrate und das Audit-Log.
+            <a href="/profil">Profil &amp; Zwei-Faktor</a>.
+            {% if aktueller_benutzer.rolle == 'admin' %}Als Administrator verwalten Sie unter
+            <a href="/einstellungen">Einstellungen</a> Benutzer, Drosselrate und das Audit-Log.{% endif %}
         </div>
-        <ul style="margin:12px 0 0 20px; color:var(--text-normal)">
-            <li>Mitglieder &amp; Anträge — folgt in AP1</li>
-            <li>Mandate &amp; Sollstellung — folgt in AP2</li>
-            <li>SEPA-Einzug — folgt in AP3</li>
-        </ul>
     </div>
 {% endblock %}
