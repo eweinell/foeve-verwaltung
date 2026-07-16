@@ -5,7 +5,21 @@ Fachkonzept: [`KONZEPT.md`](KONZEPT.md), Grundregeln: [`CLAUDE.md`](CLAUDE.md),
 Arbeitspakete: [`briefings/`](briefings/).
 
 Stack: PHP 8.3+, MariaDB 10.6+, Slim 4 + Twig, PDO (kein ORM). Serverseitig
-gerendert, keine CDN-Einbindungen. Stand: **AP2 (Mandate & Sollstellung)**.
+gerendert, keine CDN-Einbindungen. Stand: **AP3 (SEPA-Export & Einzugslauf)**.
+
+## Was in AP3 enthalten ist
+
+- Geführter Einzugslauf (F5): anlegen (Fälligkeits-/Fristprüfung nach
+  TARGET2-Bankarbeitstagen) → Pre-Notification je Position in die Queue,
+  Post-Mitglieder auf die Brief-Liste → **pain.008-XML** via
+  `abcaeffchen/sephpa` (FRST/RCUR getrennt, Umlaute SEPA-konform
+  transliteriert, gegen lokales XSD validiert) → Abschluss → Rücklastschrift.
+- Transaktionale Nebenwirkungen beim Export: Forderungen ⇒ `im_einzug`,
+  `mandat.sequenz_genutzt = true`, `zuletzt_genutzt_am`; erneuter Download
+  liefert dieselbe Datei (keine Doppel-Erzeugung). XML unter `var/sepa/`.
+- Rücklastschrift: Forderung wieder offen, optionale Gebühr, Ein-Klick-Umstellung
+  auf Selbstzahler (Mandat inaktiv). DB-seitig kann eine Forderung nie in zwei
+  Läufen stecken; ein Lauf wird nie zweimal exportiert.
 
 ## Was in AP2 enthalten ist
 

@@ -128,6 +128,20 @@ final class MandatService
     }
 
     /**
+     * Stellt ein Mitglied auf Selbstzahler um und deaktiviert das aktive Mandat
+     * (Ein-Klick nach Rücklastschrift, F5).
+     */
+    public function umstellenAufSelbstzahler(int $mitgliedId, ?int $benutzerId): void
+    {
+        $aktiv = $this->mandate->aktivesMandat($mitgliedId);
+        if ($aktiv !== null) {
+            $this->statusUpdate((int) $aktiv['id'], $mitgliedId, Mandatsstatus::INAKTIV, $benutzerId);
+            $this->audit->protokolliere($benutzerId, 'mandat_deaktiviert', 'mandat', (int) $aktiv['id'], ['grund' => 'ruecklastschrift']);
+        }
+        $this->setzeZahlweiseSelbstzahler($mitgliedId, $benutzerId);
+    }
+
+    /**
      * Deaktiviert ein Mandat (z. B. bei Umstellung auf Selbstzahler).
      */
     public function deaktivieren(int $mandatId, ?int $benutzerId): void

@@ -1,0 +1,111 @@
+{% extends 'layout.twig' %}
+{% block titel %}Einzugslauf{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>{{ lauf.bezeichnung }} <span class="badge {{ lauf_badge }}">{{ lauf_label }}</span></h1>
+            <p class="untertitel">
+                Fälligkeit {{ lauf.faelligkeitsdatum|date('d.m.Y') }} ·
+                {{ vorschau.anzahl }} Positionen · Summe {{ vorschau.summe|replace({'.': ','}) }} €
+                (FRST {{ vorschau.summe_frst|replace({'.': ','}) }} € / RCUR {{ vorschau.summe_rcur|replace({'.': ','}) }} €)
+            </p>
+        </div>
+        <a href="/einzug" class="button button-sekundaer">Zur Liste</a>
+    </div>
+
+    {# Statusaktionen #}
+    <div class="karte eng">
+        <div class="zeile">
+            {% if lauf.status == 'entwurf' %}
+                <form method="post" action="/einzug/{{ lauf.id }}/ankuendigen" style="margin:0" onsubmit="return confirm('Pre-Notifications jetzt einreihen und Lauf ankündigen?')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button">Ankündigen (Pre-Notification)</button>
+                </form>
+            {% elseif lauf.status == 'angekuendigt' %}
+                <form method="post" action="/einzug/{{ lauf.id }}/exportieren" style="margin:0">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button">pain.008-XML erzeugen &amp; herunterladen</button>
+                </form>
+            {% elseif lauf.status == 'exportiert' %}
+                <a href="/einzug/{{ lauf.id }}/download" class="button button-sekundaer">XML erneut herunterladen</a>
+                <form method="post" action="/einzug/{{ lauf.id }}/abschliessen" style="margin:0" onsubmit="return confirm('Lauf abschließen? Alle Positionen werden als bezahlt markiert.')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button">Abschließen (nach Bankeinreichung)</button>
+                </form>
+            {% else %}
+                <a href="/einzug/{{ lauf.id }}/download" class="button button-sekundaer">XML herunterladen</a>
+                <span class="feld-hinweis">Abgeschlossen am {{ lauf.abgeschlossen_am ? lauf.abgeschlossen_am|date('d.m.Y') : '—' }}</span>
+            {% endif %}
+
+            {% if darf_loeschen %}
+                <form method="post" action="/einzug/{{ lauf.id }}/loeschen" style="margin:0" onsubmit="return confirm('Lauf löschen? Die Forderungen werden wieder freigegeben.')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button button-gefahr">Lauf löschen</button>
+                </form>
+            {% endif %}
+        </div>
+        {% if lauf.status != 'entwurf' %}
+            <div class="feld-hinweis abstand-oben">Ankündigung: {{ lauf.anzahl_email }} per E-Mail, {{ lauf.anzahl_post }} per Post.</div>
+        {% endif %}
+    </div>
+
+    {% if briefliste is not empty %}
+        <div class="karte">
+            <h2 style="margin-top:0">Brief-Liste ({{ briefliste|length }}) — postalische Ankündigung</h2>
+            <div class="tabelle-huelle">
+                <table class="daten">
+                    <thead><tr><th>Nr.</th><th>Name</th><th class="num">Betrag</th><th>Mandat</th></tr></thead>
+                    <tbody>
+                        {% for p in briefliste %}
+                            <tr>
+                                <td class="mono">{{ p.mitgliedsnummer ? '%04d'|format(p.mitgliedsnummer) : '—' }}</td>
+                                <td>{{ p.anrede == 'familie' ? 'Familie ' ~ p.nachname : (p.vorname ? p.vorname ~ ' ' ~ p.nachname : p.nachname) }}</td>
+                                <td class="num">{{ '%.2f'|format(p.betrag)|replace({'.': ','}) }} €</td>
+                                <td class="mono">{{ p.mandatsreferenz }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="karte">
+        <h2 style="margin-top:0">Positionen</h2>
+        <div class="tabelle-huelle">
+            <table class="daten">
+                <thead><tr><th>Nr.</th><th>Name</th><th>Mandat</th><th>IBAN</th><th>Seq.</th><th class="num">Betrag</th><th></th></tr></thead>
+                <tbody>
+                    {% for p in vorschau.positionen %}
+                        <tr>
+                            <td class="mono">{{ p.mitgliedsnummer ? '%04d'|format(p.mitgliedsnummer) : '—' }}</td>
+                            <td>{{ p.anrede == 'familie' ? 'Familie ' ~ p.nachname : (p.vorname ? p.vorname ~ ' ' ~ p.nachname : p.nachname) }}{% if p.per_post %} <span class="badge badge-neutral">Post</span>{% endif %}</td>
+                            <td class="mono">{{ p.mandatsreferenz }}</td>
+                            <td class="iban">{{ p.iban_maskiert }}</td>
+                            <td><span class="badge {{ p.sequenztyp == 'FRST' ? 'badge-info' : 'badge-neutral' }}">{{ p.sequenztyp }}</span></td>
+                            <td class="num">{{ '%.2f'|format(p.betrag)|replace({'.': ','}) }} €</td>
+                            <td>
+                                {% if lauf.status == 'entwurf' %}
+                                    <form method="post" action="/einzug/{{ lauf.id }}/position/{{ p.forderung_id }}/abwaehlen" style="margin:0">
+                                        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                        <button class="button button-sekundaer button-klein">Abwählen</button>
+                                    </form>
+                                {% elseif lauf.status in ['exportiert', 'abgeschlossen'] %}
+                                    <form method="post" action="/einzug/{{ lauf.id }}/ruecklastschrift" style="margin:0" onsubmit="return confirm('Rücklastschrift für diese Position erfassen?')">
+                                        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                        <input type="hidden" name="forderung_id" value="{{ p.forderung_id }}">
+                                        <label class="checkbox-group" style="margin:0 6px 0 0"><input type="checkbox" name="gebuehr" value="1"> Gebühr</label>
+                                        <label class="checkbox-group" style="margin:0 6px 0 0"><input type="checkbox" name="selbstzahler" value="1"> Selbstzahler</label>
+                                        <button class="button button-gefahr button-klein">Rücklastschrift</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="text-center">Keine Positionen.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

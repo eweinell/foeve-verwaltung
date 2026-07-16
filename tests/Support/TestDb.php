@@ -192,6 +192,24 @@ final class TestDb
                 updated_at TEXT NOT NULL,
                 UNIQUE (mitglied_id, beitrag_jahr)
             )',
+            // Einzugslauf (AP3) — portabel zu migrations/004.
+            'CREATE TABLE einzugslauf (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bezeichnung TEXT NOT NULL,
+                faelligkeitsdatum TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT "entwurf",
+                summe TEXT NOT NULL DEFAULT "0.00",
+                anzahl INTEGER NOT NULL DEFAULT 0,
+                anzahl_email INTEGER NOT NULL DEFAULT 0,
+                anzahl_post INTEGER NOT NULL DEFAULT 0,
+                xml_erzeugt_am TEXT NULL,
+                xml_pfad TEXT NULL,
+                angekuendigt_am TEXT NULL,
+                abgeschlossen_am TEXT NULL,
+                erstellt_von INTEGER NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
         ];
     }
 }
