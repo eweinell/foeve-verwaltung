@@ -1,0 +1,63 @@
+{% extends 'layout.twig' %}
+{% block titel %}Benutzer{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Benutzerverwaltung</h1>
+            <p class="untertitel">Konten des Vorstands. Keine Selbstregistrierung, kein Passwort-Reset per E-Mail.</p>
+        </div>
+        <a href="/einstellungen/benutzer/neu" class="button">Neuer Benutzer</a>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>E-Mail</th>
+                    <th>Rolle</th>
+                    <th>2FA</th>
+                    <th>Status</th>
+                    <th>Letzter Login</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in benutzerliste %}
+                    <tr>
+                        <td>{{ b.name }}{% if b.passwort_aendern_pflicht %} <span class="badge badge-warn">Passwortwechsel offen</span>{% endif %}</td>
+                        <td>{{ b.email }}</td>
+                        <td>{{ b.rolle }}</td>
+                        <td>
+                            {% if b.zwei_faktor_methode == 'totp' %}App
+                            {% elseif b.zwei_faktor_methode == 'email' %}E-Mail
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if b.aktiv %}<span class="badge badge-erfolg">aktiv</span>
+                            {% else %}<span class="badge badge-neutral">deaktiviert</span>{% endif %}
+                        </td>
+                        <td>{{ b.letzter_login ? b.letzter_login|date('d.m.Y H:i') : '—' }}</td>
+                        <td>
+                            <div class="zeile">
+                                <form method="post" action="/einstellungen/benutzer/{{ b.id }}/passwort" style="margin:0"
+                                      onsubmit="return confirm('Neues Einmal-Passwort für {{ b.email }} erzeugen?')">
+                                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                    <button type="submit" class="button button-sekundaer button-klein">Passwort zurücksetzen</button>
+                                </form>
+                                <form method="post" action="/einstellungen/benutzer/{{ b.id }}/aktiv" style="margin:0">
+                                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                    <button type="submit" class="button {{ b.aktiv ? 'button-gefahr' : 'button-sekundaer' }} button-klein">
+                                        {{ b.aktiv ? 'Deaktivieren' : 'Aktivieren' }}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center">Noch keine Benutzer.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

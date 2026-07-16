@@ -1,0 +1,37 @@
+{% extends 'layout.twig' %}
+{% block titel %}Neuer Benutzer{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Neuer Benutzer</h1>
+            <p class="untertitel">Das Konto erhält ein Einmal-Passwort, das beim ersten Login geändert werden muss.</p>
+        </div>
+    </div>
+
+    <div class="karte" style="max-width:560px">
+        <form method="post" action="/einstellungen/benutzer" class="stapel">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="rolle">Rolle</label>
+                <select id="rolle" name="rolle">
+                    {% for r in rollen %}
+                        <option value="{{ r }}" {{ r == 'vorstand' ? 'selected' : '' }}>{{ r }}</option>
+                    {% endfor %}
+                </select>
+                <div class="feld-hinweis">admin: alles inkl. Benutzer/Einstellungen · vorstand: Fachmodule.</div>
+            </div>
+            <div class="zeile">
+                <button type="submit" class="button">Anlegen</button>
+                <a href="/einstellungen/benutzer" class="button button-sekundaer">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

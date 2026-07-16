@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titel|default('Fehler') }} — Vereinsverwaltung</title>
+    <link rel="icon" href="/img/favicon.png" type="image/png">
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<main class="inhalt-schmal">
+    <div class="karte">
+        <h1 class="text-center">{{ status|default(500) }} — {{ titel|default('Ein Fehler ist aufgetreten') }}</h1>
+        <p class="text-center">Es ist ein unerwarteter Fehler aufgetreten. Bitte versuchen Sie es später erneut.</p>
+        {% if debug and meldung %}
+            <div class="alert alert-error"><strong>Debug:</strong> {{ meldung }}</div>
+            {% if spur %}<pre class="mono" style="overflow:auto;font-size:12px">{{ spur }}</pre>{% endif %}
+        {% endif %}
+        <div class="text-center abstand-oben">
+            <a href="/" class="button">Zur Startseite</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

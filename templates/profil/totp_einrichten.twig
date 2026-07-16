@@ -1,0 +1,32 @@
+{% extends 'layout.twig' %}
+{% block titel %}Authenticator einrichten{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Authenticator-App einrichten</h1>
+            <p class="untertitel">Scannen Sie den QR-Code mit Ihrer Authenticator-App und bestätigen Sie mit dem angezeigten Code.</p>
+        </div>
+    </div>
+
+    <div class="karte" style="max-width:520px">
+        <div class="text-center">
+            <img src="{{ qr }}" alt="QR-Code zur Einrichtung" width="220" height="220">
+        </div>
+        <div class="feld-hinweis text-center">
+            Falls der Scan nicht klappt, geben Sie diesen Schlüssel manuell ein:
+            <br><span class="mono">{{ secret }}</span>
+        </div>
+
+        <form method="post" action="/profil/totp" class="stapel abstand-oben">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="code">Code aus der App</label>
+                <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus>
+            </div>
+            <div class="zeile">
+                <button type="submit" class="button">Aktivieren</button>
+                <a href="/profil" class="button button-sekundaer">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

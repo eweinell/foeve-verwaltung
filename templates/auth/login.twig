@@ -1,0 +1,26 @@
+{% extends 'layout.twig' %}
+{% block titel %}Anmelden{% endblock %}
+{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf" style="justify-content:center">
+        <div class="text-center">
+            <img src="/img/logo.png" alt="" style="height:44px">
+            <h1 style="margin-top:12px">Vereinsverwaltung</h1>
+            <p class="untertitel">Bitte melden Sie sich an.</p>
+        </div>
+    </div>
+    <div class="karte">
+        <form method="post" action="/login" class="stapel">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" autocomplete="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="passwort">Passwort</label>
+                <input type="password" id="passwort" name="passwort" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="button button-voll">Anmelden</button>
+        </form>
+    </div>
+{% endblock %}

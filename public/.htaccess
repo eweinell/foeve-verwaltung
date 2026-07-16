@@ -1,0 +1,26 @@
+# foeve-verwaltung — Apache-Front-Controller (netcup Shared Hosting)
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # HTTPS erzwingen (CLAUDE.md/F9: ausschließlich HTTPS)
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # Vorhandene Dateien/Verzeichnisse direkt ausliefern (Assets)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Alles Übrige an den Front-Controller
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Kein Verzeichnislisting
+Options -Indexes
+
+# Sensible Dateien niemals ausliefern (Defense in Depth; .env liegt ohnehin außerhalb)
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>

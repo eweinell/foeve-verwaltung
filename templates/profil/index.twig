@@ -1,0 +1,43 @@
+{% extends 'layout.twig' %}
+{% block titel %}Mein Profil{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Mein Profil</h1>
+            <p class="untertitel">{{ benutzer.name }} · {{ benutzer.email }} · Rolle: {{ benutzer.rolle }}</p>
+        </div>
+    </div>
+
+    <div class="karte" style="max-width:640px">
+        <h2 style="margin-top:0">Zwei-Faktor-Anmeldung</h2>
+
+        {% set methode = benutzer.zwei_faktor_methode %}
+        {% if methode == 'totp' %}
+            <p><span class="badge badge-erfolg">aktiv</span> Authenticator-App (TOTP)</p>
+        {% elseif methode == 'email' %}
+            <p><span class="badge badge-erfolg">aktiv</span> Bestätigungscode per E-Mail</p>
+        {% else %}
+            <p><span class="badge badge-neutral">nicht aktiv</span> Ihre Anmeldung ist nur durch das Passwort geschützt.</p>
+        {% endif %}
+
+        <div class="info-box">
+            Der zweite Faktor ist optional. Sie können ihn jederzeit ändern oder deaktivieren.
+        </div>
+
+        <div class="zeile abstand-oben">
+            <a href="/profil/totp" class="button">Authenticator-App einrichten</a>
+
+            <form method="post" action="/profil/email" style="margin:0">
+                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                <button type="submit" class="button button-sekundaer">E-Mail-Code aktivieren</button>
+            </form>
+
+            {% if methode != 'keine' %}
+                <form method="post" action="/profil/2fa/aus" style="margin:0">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button type="submit" class="button button-gefahr">Deaktivieren</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
