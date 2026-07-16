@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!--
+  Styleguide / Design-Referenz der Verwaltung — KEIN Teil der App.
+  Zeigt die Komponenten aus public/css/app.css und dient AP0 als Vorlage
+  für das Twig-Basis-Layout. Lokal per Doppelklick (file://) öffnen.
+-->
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styleguide — Vereinsverwaltung</title>
+    <link rel="icon" href="../public/img/favicon.png" type="image/png">
+    <link rel="stylesheet" href="../public/css/app.css">
+</head>
+<body>
+    <!-- Kopfnavigation (Vorlage für das Twig-Basis-Layout) -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="topbar-marke" href="#">
+                <img src="../public/img/logo.png" alt="Förderverein Gymnasium Herzogenrath">
+                <span>Vereinsverwaltung</span>
+            </a>
+            <nav class="hauptnav">
+                <a href="#" class="aktiv">Mitglieder</a>
+                <a href="#">Anträge</a>
+                <a href="#">Beiträge</a>
+                <a href="#">Einzug</a>
+                <a href="#">E-Mail</a>
+                <a href="#">Statistik</a>
+                <a href="#">Einstellungen</a>
+            </nav>
+            <div class="topbar-benutzer">
+                <span>Angemeldet: M. Vorstand</span>
+                <a href="#" class="button button-sekundaer button-klein">Abmelden</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="inhalt">
+        <div class="seitenkopf">
+            <div>
+                <h1>Styleguide</h1>
+                <p class="untertitel">Design-Fundament der Verwaltung — abgeleitet aus der Antrags-App</p>
+            </div>
+            <a href="#" class="button">Neues Mitglied</a>
+        </div>
+
+        <!-- Flash-Messages -->
+        <div class="alert alert-success">Mitglied <strong>Anna Muster</strong> wurde gespeichert.</div>
+        <div class="alert alert-error">Die IBAN-Prüfsumme ist ungültig.</div>
+        <div class="alert alert-warn">Für 3 Mitglieder fehlt ein gültiges Mandat.</div>
+        <div class="alert alert-info">Der nächste Einzugslauf ist für den 15.03.2026 geplant.</div>
+
+        <!-- Tabelle -->
+        <h2>Tabelle (Mitgliederliste)</h2>
+        <div class="tabelle-huelle">
+            <table class="daten">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Ort</th>
+                        <th>IBAN</th>
+                        <th class="num">Beitrag</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Familie Muster</td><td>52134 Herzogenrath</td>
+                        <td class="iban">DE12 …… 3456</td><td class="num">30,00 €</td>
+                        <td><span class="badge badge-erfolg">aktiv</span></td>
+                        <td><a href="#" class="button button-sekundaer button-klein">Bearbeiten</a></td>
+                    </tr>
+                    <tr>
+                        <td>Herr Jan de Vries</td><td>6412 Heerlen (NL)</td>
+                        <td class="iban">NL91 …… 6789</td><td class="num">60,00 €</td>
+                        <td><span class="badge badge-warn">Mandat fehlt</span></td>
+                        <td><a href="#" class="button button-sekundaer button-klein">Bearbeiten</a></td>
+                    </tr>
+                    <tr>
+                        <td>Frau Petra Klein</td><td>52134 Herzogenrath</td>
+                        <td class="iban">DE89 …… 3000</td><td class="num">12,00 €</td>
+                        <td><span class="badge badge-neutral">ausgetreten</span></td>
+                        <td><a href="#" class="button button-sekundaer button-klein">Bearbeiten</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Badges -->
+        <h2>Status-Badges</h2>
+        <div class="zeile">
+            <span class="badge badge-erfolg">aktiv</span>
+            <span class="badge badge-info">in Prüfung</span>
+            <span class="badge badge-warn">Mandat fehlt</span>
+            <span class="badge badge-fehler">storniert</span>
+            <span class="badge badge-neutral">ausgetreten</span>
+        </div>
+
+        <!-- Formular in Karte -->
+        <h2>Formular</h2>
+        <div class="karte" style="max-width: 640px;">
+            <div class="form-raster">
+                <div class="form-group">
+                    <label for="anrede">Anrede</label>
+                    <select id="anrede"><option>Herr</option><option>Frau</option><option>Familie</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="vorname">Vorname</label>
+                    <input type="text" id="vorname" value="Anna">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="strasse">Straße und Hausnummer</label>
+                    <input type="text" id="strasse" value="Musterweg 1">
+                </div>
+                <div class="form-group spanne-2">
+                    <div class="adress-raster">
+                        <div>
+                            <label for="plz">PLZ</label>
+                            <input type="text" id="plz" class="valid" value="52134">
+                        </div>
+                        <div>
+                            <label for="ort">Ort</label>
+                            <input type="text" id="ort" value="Herzogenrath">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="iban">IBAN</label>
+                    <input type="text" id="iban" class="error" value="DE00 0000">
+                    <div class="error-message show">Die IBAN-Prüfsumme ist ungültig.</div>
+                </div>
+                <div class="form-group">
+                    <label for="beitrag">Jahresbeitrag</label>
+                    <input type="text" id="beitrag" value="30,00">
+                    <div class="feld-hinweis">Zwischen 12 € und 500 €.</div>
+                </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="mandat" checked>
+                <label for="mandat">SEPA-Lastschriftmandat liegt vor.</label>
+            </div>
+            <div class="zeile abstand-oben">
+                <button class="button">Speichern</button>
+                <button class="button button-sekundaer">Abbrechen</button>
+                <button class="button button-gefahr">Löschen</button>
+            </div>
+        </div>
+
+        <!-- Info-Box -->
+        <div class="info-box">
+            <strong>Hinweis:</strong> Schreibzugriffe auf Mitglied/Mandat laufen über den
+            Versionierungs-Service; IBANs werden nie im Klartext angezeigt (maskiert: DE12 …… 3456).
+        </div>
+
+        <!-- Schmaler Container (Login/Profil) -->
+        <h2>Schmaler Container (Login/Profil)</h2>
+        <div class="karte" style="max-width: 420px;">
+            <h3 style="margin-top:0">Anmelden</h3>
+            <div class="form-group">
+                <label for="benutzer">E-Mail</label>
+                <input type="email" id="benutzer" placeholder="name@verein.de">
+            </div>
+            <div class="form-group">
+                <label for="pw">Passwort</label>
+                <input type="password" id="pw" placeholder="••••••••">
+            </div>
+            <button class="button button-voll">Anmelden</button>
+        </div>
+    </main>
+
+    <footer class="fusszeile">
+        Verein der Freunde und Förderer des Städtischen Gymnasiums Herzogenrath e.V. — Verwaltung
+    </footer>
+</body>
+</html>

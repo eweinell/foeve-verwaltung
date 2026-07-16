@@ -19,9 +19,13 @@ Krypto-Service für IBANs und ein minimaler Mail-Queue-Dienst.
 - Fehlerbehandlung: hübsche 404/403/500-Seiten (deutsch), Fehlerdetails nur bei
   `APP_DEBUG=true`; Logging nach `var/log/` (Monolog oder minimaler PSR-3-Logger).
 - Basis-Layout (Twig): Kopfnavigation (Mitglieder, Anträge, Beiträge, Einzug, E-Mail,
-  Statistik, Einstellungen), Flash-Messages, schlichtes eigenes CSS oder lokal
-  eingebundenes klassenloses CSS-Framework (z. B. Pico.css als lokale Datei). Deutsch,
-  Sie-Form, brauchbar auf Tablet-Breite.
+  Statistik, Einstellungen), Flash-Messages. **Design-Fundament liegt bereits vor**
+  (aus der Antrags-App abgeleitet, statt Pico.css): `public/css/app.css` (Tokens +
+  Komponenten + Admin-Layout), Marken-Assets in `public/img/` (`logo.png`, `favicon.png`),
+  visuelle Referenz `design/styleguide.html`. Twig-Layout an dieser Referenz ausrichten,
+  Klassen wiederverwenden (`.topbar/.hauptnav`, `.inhalt`, `.karte`, `table.daten`,
+  `.alert-*`, `.badge-*`, `.button*`, `.form-raster`). Deutsch, Sie-Form, brauchbar auf
+  Tablet-Breite.
 
 ### 2. Migrationen
 

@@ -1,0 +1,409 @@
+/* app.css — Design-Fundament der Verwaltung (foeve-verwaltung)
+ *
+ * Abgeleitet aus dem Design der Antrags-App (foeve-signupphp):
+ * gleiche Marken-Tokens, portierte Formular-/Alert-/Info-Komponenten,
+ * ergänzt um eine Admin-Schicht (Kopfnavigation, Tabellen, Karten),
+ * die das kartenzentrierte Antragsformular nicht hatte.
+ *
+ * Alle Farben/Radien/Abstände sind als CSS-Custom-Properties zentralisiert,
+ * damit beide Apps denselben Look teilen. Nur lokale Assets, keine CDNs.
+ */
+
+/* ===== Design-Tokens ===== */
+:root {
+    /* Marke */
+    --farbe-primaer:        #3391cb;   /* SGH-Blau (Logo) */
+    --farbe-primaer-hover:  #0076bc;
+
+    /* Text */
+    --text-stark:   #1a1a1a;
+    --text-mittel:  #374151;
+    --text-normal:  #4b5563;
+    --text-schwach: #6b7280;
+
+    /* Flächen & Rahmen */
+    --flaeche:        #ffffff;
+    --flaeche-alt:    #f9fafb;
+    --flaeche-input:  #fafafa;
+    --rahmen:         #d1d5db;
+    --rahmen-leicht:  #e5e7eb;
+    --hintergrund:    linear-gradient(135deg, #e8eaf6 0%, #f5f5f7 100%);
+
+    /* Semantik */
+    --erfolg-bg:  #f0fdf4;  --erfolg-text:  #166534;  --erfolg-rahmen:  #bbf7d0;  --erfolg:  #10b981;
+    --fehler-bg:  #fef2f2;  --fehler-text:  #991b1b;  --fehler-rahmen:  #fecaca;  --fehler:  #ef4444;
+    --warn-bg:    #fef3c7;  --warn-text:    #92400e;  --warn-rahmen:    #fbbf24;
+    --info-bg:    #f9fafb;
+
+    /* Form & Effekte */
+    --radius:       8px;
+    --radius-karte: 12px;
+    --schatten:     0 4px 16px rgba(0, 0, 0, 0.08);
+    --schatten-nav: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --tempo:        0.2s;
+
+    /* Layout */
+    --inhalt-breite: 1120px;
+    --nav-hoehe:     60px;
+
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* ===== Reset & Basis ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font);
+    background: var(--hintergrund);
+    background-attachment: fixed;
+    min-height: 100vh;
+    line-height: 1.6;
+    color: var(--text-stark);
+}
+
+/* ===== Kopfnavigation ===== */
+.topbar {
+    background: var(--flaeche);
+    box-shadow: var(--schatten-nav);
+    border-bottom: 1px solid var(--rahmen-leicht);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar-inner {
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    min-height: var(--nav-hoehe);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.topbar-marke {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.topbar-marke img { height: 34px; width: auto; }
+
+.topbar-marke span {
+    font-weight: 600;
+    color: var(--text-stark);
+    font-size: 15px;
+}
+
+.hauptnav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.hauptnav a {
+    color: var(--text-normal);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    transition: all var(--tempo);
+    white-space: nowrap;
+}
+
+.hauptnav a:hover { background: var(--flaeche-alt); color: var(--text-stark); }
+
+.hauptnav a.aktiv {
+    color: var(--farbe-primaer-hover);
+    background: #eaf4fb;
+    font-weight: 600;
+}
+
+.topbar-benutzer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-schwach);
+    margin-left: auto;
+}
+
+/* ===== Layout ===== */
+.inhalt {
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+}
+
+.seitenkopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+/* Schmaler, zentrierter Container — für Login/Profil, analog zur Antrags-Karte */
+.inhalt-schmal {
+    max-width: 520px;
+    margin: 40px auto;
+    padding: 0 20px 60px;
+}
+
+/* ===== Typografie ===== */
+h1 { color: var(--text-stark);  font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+h2 { color: var(--text-mittel); font-size: 20px; font-weight: 600; margin: 28px 0 14px; }
+h3 { color: var(--text-normal); font-size: 17px; font-weight: 600; margin: 20px 0 10px; }
+p  { margin-bottom: 14px; color: var(--text-normal); }
+
+.untertitel { color: var(--text-schwach); font-size: 14px; margin-bottom: 24px; }
+
+a:not(.button):not(.hauptnav a):not(.topbar-marke) {
+    color: var(--farbe-primaer-hover);
+    text-decoration: underline;
+}
+
+/* ===== Karten / Panels ===== */
+.karte {
+    background: var(--flaeche);
+    border-radius: var(--radius-karte);
+    box-shadow: var(--schatten);
+    padding: 28px 28px;
+    margin-bottom: 20px;
+}
+
+.karte.eng { padding: 20px; }
+
+/* ===== Formulare (portiert aus styles.css) ===== */
+.form-group { margin-bottom: 20px; }
+
+label {
+    display: block;
+    color: var(--text-mittel);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+input[type="text"], input[type="email"], input[type="number"],
+input[type="password"], input[type="date"], input[type="search"],
+input[type="tel"], select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--flaeche-input);
+    transition: all var(--tempo);
+    color: var(--text-stark);
+}
+
+textarea { resize: vertical; min-height: 90px; }
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--text-schwach);
+    background: var(--flaeche);
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+}
+
+input.error, select.error, textarea.error { border-color: var(--fehler); background: var(--fehler-bg); }
+input.valid, select.valid { border-color: var(--erfolg); background: var(--erfolg-bg); }
+
+/* Mehrspaltige Formular-Anordnung (Tablet/Desktop) */
+.form-raster {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 20px;
+}
+.form-raster .spanne-2 { grid-column: 1 / -1; }
+.adress-raster { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+
+.error-message { color: var(--fehler); font-size: 13px; margin-top: 4px; display: none; }
+.error-message.show { display: block; }
+
+.feld-hinweis { color: var(--text-schwach); font-size: 13px; margin-top: 4px; }
+
+/* Radio-/Checkbox-Optionen */
+.radio-option {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px solid var(--rahmen);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--tempo);
+    background: var(--flaeche-input);
+    margin-bottom: 10px;
+}
+.radio-option:hover { border-color: #9ca3af; background: var(--flaeche); }
+.radio-option input[type="radio"] { width: 18px; height: 18px; margin-right: 12px; accent-color: var(--text-schwach); cursor: pointer; }
+
+.checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0; }
+.checkbox-group input[type="checkbox"] { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--text-schwach); cursor: pointer; }
+.checkbox-group label { margin: 0; font-size: 14px; color: var(--text-normal); cursor: pointer; }
+
+/* ===== Buttons ===== */
+.button {
+    display: inline-block;
+    background: var(--farbe-primaer);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all var(--tempo);
+}
+.button:hover:not(:disabled) {
+    background: var(--farbe-primaer-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 118, 188, 0.25);
+    color: #fff;
+}
+.button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.button-voll { width: 100%; padding: 14px; font-size: 16px; }
+.button-klein { padding: 7px 12px; font-size: 13px; }
+
+/* Sekundär (Umriss) */
+.button-sekundaer {
+    background: var(--flaeche);
+    color: var(--text-mittel);
+    border: 1px solid var(--rahmen);
+}
+.button-sekundaer:hover:not(:disabled) {
+    background: var(--flaeche-alt);
+    color: var(--text-stark);
+    border-color: #9ca3af;
+    box-shadow: none;
+}
+
+/* Gefahr (löschen/stornieren) */
+.button-gefahr { background: var(--fehler); }
+.button-gefahr:hover:not(:disabled) { background: #b91c1c; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+
+/* ===== Alerts / Flash-Messages ===== */
+.alert {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    font-size: 14px;
+    border: 1px solid transparent;
+}
+.alert-success { background: var(--erfolg-bg); color: var(--erfolg-text); border-color: var(--erfolg-rahmen); }
+.alert-error   { background: var(--fehler-bg); color: var(--fehler-text); border-color: var(--fehler-rahmen); }
+.alert-warn    { background: var(--warn-bg);   color: var(--warn-text);   border-color: var(--warn-rahmen); }
+.alert-info    { background: var(--info-bg);   color: var(--text-normal); border-color: var(--rahmen-leicht); }
+
+/* Info-Box */
+.info-box {
+    background: var(--info-bg);
+    border-left: 3px solid #9ca3af;
+    padding: 12px 14px;
+    border-radius: 4px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--text-normal);
+}
+.info-box ul { margin: 8px 0 4px 22px; }
+.info-box li { margin-bottom: 6px; }
+
+/* ===== Status-Badges (Mitglied/Forderung/Einzugslauf) ===== */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.badge-erfolg  { background: var(--erfolg-bg); color: var(--erfolg-text); border-color: var(--erfolg-rahmen); }
+.badge-fehler  { background: var(--fehler-bg); color: var(--fehler-text); border-color: var(--fehler-rahmen); }
+.badge-warn    { background: var(--warn-bg);   color: var(--warn-text);   border-color: var(--warn-rahmen); }
+.badge-neutral { background: #f3f4f6; color: var(--text-mittel); border-color: var(--rahmen-leicht); }
+.badge-info    { background: #eaf4fb; color: var(--farbe-primaer-hover); border-color: #cce3f4; }
+
+/* ===== Tabellen (neu für die Verwaltung) ===== */
+.tabelle-huelle {
+    background: var(--flaeche);
+    border-radius: var(--radius-karte);
+    box-shadow: var(--schatten);
+    overflow-x: auto;
+}
+
+table.daten {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+table.daten thead th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-mittel);
+    background: var(--flaeche-alt);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rahmen-leicht);
+    white-space: nowrap;
+}
+table.daten tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rahmen-leicht);
+    color: var(--text-normal);
+    vertical-align: middle;
+}
+table.daten tbody tr:last-child td { border-bottom: none; }
+table.daten tbody tr:hover { background: var(--flaeche-alt); }
+
+/* Zahlen/Beträge rechtsbündig, tabellarische Ziffern */
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.iban { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; letter-spacing: 0.02em; }
+
+/* ===== Hilfsklassen ===== */
+.text-center { text-align: center; }
+.mono { font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; }
+.stapel > * + * { margin-top: 14px; }
+.zeile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.abstand-oben { margin-top: 20px; }
+
+/* ===== Fußzeile ===== */
+.fusszeile {
+    max-width: var(--inhalt-breite);
+    margin: 0 auto;
+    padding: 24px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-schwach);
+}
+
+/* ===== Responsiv (Tablet & schmaler) ===== */
+@media (max-width: 780px) {
+    .form-raster, .adress-raster { grid-template-columns: 1fr; }
+    .topbar-inner { padding: 8px 16px; }
+    .hauptnav { order: 3; width: 100%; }
+    .topbar-benutzer { margin-left: 0; }
+    h1 { font-size: 22px; }
+}
