@@ -98,6 +98,21 @@ return static function (array $settings): ContainerInterface {
             $c->get(LoggerInterface::class),
         ),
 
+        App\Service\EinzugslaufService::class => static fn (ContainerInterface $c) => new App\Service\EinzugslaufService(
+            $c->get(Db::class),
+            $c->get(App\Repository\EinzugslaufRepository::class),
+            $c->get(App\Repository\ForderungRepository::class),
+            $c->get(App\Service\MandatService::class),
+            $c->get(App\Service\SollstellungService::class),
+            $c->get(Krypto::class),
+            $c->get(MailDienst::class),
+            $c->get(App\Service\AnredeDienst::class),
+            $c->get(Einstellungen::class),
+            $c->get(App\Service\SepaXmlValidator::class),
+            $c->get(Audit::class),
+            (string) $settings['pfade']['basis'],
+        ),
+
         App\Service\AntragService::class => static fn (ContainerInterface $c) => new App\Service\AntragService(
             $c->get(Db::class),
             $c->get(App\Repository\MitgliedRepository::class),

@@ -4,8 +4,140 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "528c2c2e232e2cdc480419dde24a15a2",
+    "content-hash": "be0d320785d8c34c6d5171ea1286420c",
     "packages": [
+        {
+            "name": "abcaeffchen/sepa-utilities",
+            "version": "2.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AbcAeffchen/SepaUtilities.git",
+                "reference": "09254fa956f6fddcc2064d0f2daa5cef55e959f7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AbcAeffchen/SepaUtilities/zipball/09254fa956f6fddcc2064d0f2daa5cef55e959f7",
+                "reference": "09254fa956f6fddcc2064d0f2daa5cef55e959f7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "ext-calendar": "*",
+                "phpunit/phpunit": "^11 || ^10"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AbcAeffchen\\SepaUtilities\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander Schickedanz (AbcAeffchen)",
+                    "email": "abcaeffchen@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "SepaUtilities provides useful methods for validating and sanitizing inputs used in SEPA files supporting PHP >= 8.1.",
+            "homepage": "https://github.com/AbcAeffchen/SepaUtilities",
+            "keywords": [
+                "BIC",
+                "IBAN",
+                "php8",
+                "sanitize",
+                "sepa",
+                "validate"
+            ],
+            "support": {
+                "issues": "https://github.com/AbcAeffchen/SepaUtilities/issues",
+                "source": "https://github.com/AbcAeffchen/SepaUtilities/tree/2.0.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/AbcAeffchen",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-05-16T17:09:25+00:00"
+        },
+        {
+            "name": "abcaeffchen/sephpa",
+            "version": "3.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AbcAeffchen/Sephpa.git",
+                "reference": "9170b05779577f6b7ef0cf80b405b152c0529cdf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AbcAeffchen/Sephpa/zipball/9170b05779577f6b7ef0cf80b405b152c0529cdf",
+                "reference": "9170b05779577f6b7ef0cf80b405b152c0529cdf",
+                "shasum": ""
+            },
+            "require": {
+                "abcaeffchen/sepa-utilities": "^2.0",
+                "ext-simplexml": "*",
+                "ext-xml": "*",
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "abcaeffchen/sepa-documentor": "^3.0",
+                "ext-dom": "*",
+                "ext-zip": "*",
+                "phpunit/phpunit": "^11 || ^10"
+            },
+            "suggest": {
+                "abcaeffchen/sepa-documentor": "^2.0",
+                "ext-zip": "Needed to store or download multiple files at once."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AbcAeffchen\\Sephpa\\": "src/",
+                    "AbcAeffchen\\Sephpa\\PaymentCollections\\": "src/payment-collections/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander Schickedanz (AbcAeffchen)",
+                    "email": "abcaeffchen@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Generates SEPA files for credit transfers (pain.001.001.03, pain.001.002.03, pain.001.003.03, pain.001.001.09) and direct debit (pain.008.001.02, pain.008.002.02, pain.008.003.02, pain.008.001.08)",
+            "homepage": "https://github.com/AbcAeffchen/Sephpa",
+            "keywords": [
+                "Banking",
+                "credit transfer",
+                "direct debit",
+                "files",
+                "finance",
+                "php8",
+                "sepa",
+                "xml"
+            ],
+            "support": {
+                "issues": "https://github.com/AbcAeffchen/Sephpa/issues",
+                "source": "https://github.com/AbcAeffchen/Sephpa/tree/3.0.4"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/AbcAeffchen",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-06-05T13:52:58+00:00"
+        },
         {
             "name": "bacon/bacon-qr-code",
             "version": "v3.1.1",
@@ -4344,10 +4476,10 @@
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.3",
-        "ext-pdo": "*",
-        "ext-sodium": "*",
         "ext-json": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-sodium": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"

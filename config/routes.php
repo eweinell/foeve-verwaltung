@@ -8,6 +8,7 @@ use App\Controller\AuthController;
 use App\Controller\BenutzerController;
 use App\Controller\DashboardController;
 use App\Controller\EinstellungenController;
+use App\Controller\EinzugController;
 use App\Controller\ForderungController;
 use App\Controller\MitgliedController;
 use App\Controller\ProfilController;
@@ -68,6 +69,18 @@ return static function (App $app): void {
         $group->get('/sollstellung', [ForderungController::class, 'sollstellung']);
         $group->post('/sollstellung', [ForderungController::class, 'sollstellungAusfuehren']);
         $group->get('/forderungen', [ForderungController::class, 'offenePosten']);
+
+        // SEPA-Einzugslauf (AP3)
+        $group->get('/einzug', [EinzugController::class, 'liste']);
+        $group->post('/einzug', [EinzugController::class, 'anlegen']);
+        $group->get('/einzug/{id:[0-9]+}', [EinzugController::class, 'detail']);
+        $group->post('/einzug/{id:[0-9]+}/position/{forderungId:[0-9]+}/abwaehlen', [EinzugController::class, 'positionAbwaehlen']);
+        $group->post('/einzug/{id:[0-9]+}/ankuendigen', [EinzugController::class, 'ankuendigen']);
+        $group->post('/einzug/{id:[0-9]+}/exportieren', [EinzugController::class, 'exportieren']);
+        $group->get('/einzug/{id:[0-9]+}/download', [EinzugController::class, 'download']);
+        $group->post('/einzug/{id:[0-9]+}/abschliessen', [EinzugController::class, 'abschliessen']);
+        $group->post('/einzug/{id:[0-9]+}/loeschen', [EinzugController::class, 'loeschen']);
+        $group->post('/einzug/{id:[0-9]+}/ruecklastschrift', [EinzugController::class, 'ruecklastschrift']);
 
         $group->get('/passwort-aendern', [AuthController::class, 'passwortAendernFormular']);
         $group->post('/passwort-aendern', [AuthController::class, 'passwortAendern']);
