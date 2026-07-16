@@ -34,6 +34,8 @@ final class MitgliedService
         private readonly MailDienst $mail,
         private readonly AnredeDienst $anrede,
         private readonly Audit $audit,
+        private readonly MandatService $mandate,
+        private readonly SollstellungService $sollstellung,
     ) {
     }
 
@@ -103,6 +105,11 @@ final class MitgliedService
                 'eintrittsdatum' => $eintritt,
             ]);
         });
+
+        // Hooks (AP2): Mandat aus dem Antrag anlegen und Beitragsforderung fürs
+        // laufende Jahr erzeugen (Q1: voller Jahresbeitrag im Eintrittsjahr).
+        $this->mandate->ausAntragErstellen($id, $nummer, $benutzerId);
+        $this->sollstellung->einzelsollstellung($id, (string) $mitglied['jahresbeitrag'], $benutzerId);
 
         $this->begruessung($mitglied);
         $this->audit->protokolliere($benutzerId, 'mitglied_aktiviert', 'mitglied', $id, ['nummer' => $nummer]);

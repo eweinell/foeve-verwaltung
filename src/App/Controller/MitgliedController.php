@@ -37,6 +37,11 @@ final class MitgliedController
         private readonly Validierung $validierung,
         private readonly AnredeDienst $anrede,
         private readonly Einstellungen $einstellungen,
+        private readonly \App\Repository\MandatRepository $mandate,
+        private readonly \App\Repository\ForderungRepository $forderungen,
+        private readonly \App\Service\MandatService $mandatService,
+        private readonly \App\Service\SollstellungService $sollstellung,
+        private readonly \App\Service\Krypto $krypto,
     ) {
     }
 
@@ -83,6 +88,9 @@ final class MitgliedController
             'laender'        => Laender::NAMEN,
         ];
 
+        // §3.5: Hinweis, ob eine offene Beitragsforderung des laufenden Jahres besteht.
+        $daten['offene_forderung_lfd'] = $this->sollstellung->offeneBeitragsforderungLaufendesJahr((int) $mitglied['id']) !== null;
+
         if ($tab === 'email') {
             $daten['emails'] = $this->db->alleZeilen(
                 'SELECT * FROM email_queue WHERE mitglied_id = :id ORDER BY id DESC',
@@ -90,6 +98,11 @@ final class MitgliedController
             );
         } elseif ($tab === 'historie') {
             $daten['historie'] = $this->historie((int) $mitglied['id'], $mitglied);
+        } elseif ($tab === 'mandate') {
+            $daten['mandate'] = $this->mandateAnzeige((int) $mitglied['id']);
+        } elseif ($tab === 'beitraege') {
+            $daten['forderungen'] = $this->forderungenAnzeige((int) $mitglied['id']);
+            $daten['forderung_status'] = \App\Domain\Forderungsstatus::alle();
         }
 
         return $this->ansicht->render($response, 'mitglied/detail.twig', $daten);
@@ -177,7 +190,16 @@ final class MitgliedController
         }
 
         $this->service->beitragAendern((int) $mitglied['id'], (string) $wert, $this->benutzerId($request));
-        $this->flash->erfolg('Der Jahresbeitrag wurde geändert (wirksam ab der nächsten Sollstellung).');
+
+        // §3.5: offene Forderung des laufenden Jahres optional mit anpassen.
+        $meldung = 'Der Jahresbeitrag wurde geändert (wirksam ab der nächsten Sollstellung).';
+        if (isset($body['auch_forderung']) && $this->sollstellung->offeneBeitragsforderungLaufendesJahr((int) $mitglied['id']) !== null) {
+            $jahr = (int) date('Y');
+            if ($this->sollstellung->beitragForderungAnpassen((int) $mitglied['id'], $jahr, (string) $wert, $this->benutzerId($request))) {
+                $meldung = 'Der Jahresbeitrag und die offene Forderung des laufenden Jahres wurden angepasst.';
+            }
+        }
+        $this->flash->erfolg($meldung);
 
         return $this->zu($response, (int) $mitglied['id']);
     }
@@ -252,7 +274,190 @@ final class MitgliedController
         return $response->withHeader('Location', '/mitglieder/' . $mitglied['id'] . '?tab=historie')->withStatus(302);
     }
 
+    // ---- Mandate & Beiträge (AP2) ----------------------------------------
+
+    public function zahlweiseUmstellen(Request $request, Response $response, array $args): Response
+    {
+        $mitglied = $this->laden((int) $args['id'], $request);
+        $body = (array) $request->getParsedBody();
+        $ziel = (string) ($body['zahlweise'] ?? '');
+        $ziel = in_array($ziel, self::ZAHLWEISEN, true) ? $ziel : '';
+
+        if ($ziel === 'lastschrift' && $this->mandate->aktivesMandat((int) $mitglied['id']) === null) {
+            $this->flash->fehler('Für die Zahlweise „Lastschrift" wird ein aktives Mandat benötigt.');
+
+            return $this->zuTab($response, (int) $mitglied['id'], 'mandate');
+        }
+
+        $this->service->stammdatenAendern((int) $mitglied['id'], ['zahlweise' => $ziel], $this->benutzerId($request));
+
+        // Bei Umstellung auf Selbstzahler das aktive Mandat anbieten zu deaktivieren (hier direkt).
+        if ($ziel === 'selbstzahler') {
+            $aktiv = $this->mandate->aktivesMandat((int) $mitglied['id']);
+            if ($aktiv !== null && isset(((array) $request->getParsedBody())['mandat_deaktivieren'])) {
+                $this->mandatService->deaktivieren((int) $aktiv['id'], $this->benutzerId($request));
+            }
+        }
+        $this->flash->erfolg('Die Zahlweise wurde umgestellt.');
+
+        return $this->zuTab($response, (int) $mitglied['id'], 'mandate');
+    }
+
+    public function mandatAnlegen(Request $request, Response $response, array $args): Response
+    {
+        $mitglied = $this->laden((int) $args['id'], $request);
+        $d = (array) $request->getParsedBody();
+        $iban = $this->validierung->ibanNormalisieren((string) ($d['iban'] ?? ''));
+        $kontoinhaber = trim((string) ($d['kontoinhaber'] ?? '')) ?: trim((string) $mitglied['nachname']);
+        $bic = trim((string) ($d['bic'] ?? '')) ?: null;
+
+        if (!$this->validierung->ibanGueltig($iban)) {
+            $this->flash->fehler('Die IBAN ist ungültig (Prüfziffer/Länge).');
+
+            return $this->zuTab($response, (int) $mitglied['id'], 'mandate');
+        }
+
+        try {
+            $this->mandatService->neuesMandat((int) $mitglied['id'], $iban, $kontoinhaber, $bic, $this->benutzerId($request));
+            $this->flash->erfolg('Das Mandat wurde angelegt. Ein bestehendes aktives Mandat wurde dabei deaktiviert.');
+        } catch (\Throwable $e) {
+            $this->flash->fehler('Mandat konnte nicht angelegt werden: ' . $e->getMessage());
+        }
+
+        return $this->zuTab($response, (int) $mitglied['id'], 'mandate');
+    }
+
+    public function mandatWiderrufen(Request $request, Response $response, array $args): Response
+    {
+        $mandat = $this->mandate->findePerId((int) $args['mandatId']);
+        if ($mandat === null) {
+            throw new HttpNotFoundException($request, 'Mandat nicht gefunden.');
+        }
+        $this->mandatService->widerrufen((int) $mandat['id'], $this->benutzerId($request));
+        $this->flash->warnung('Das Mandat wurde widerrufen; das Mitglied wurde auf Selbstzahler gestellt.');
+
+        return $this->zuTab($response, (int) $mandat['mitglied_id'], 'mandate');
+    }
+
+    public function mandatDeaktivieren(Request $request, Response $response, array $args): Response
+    {
+        $mandat = $this->mandate->findePerId((int) $args['mandatId']);
+        if ($mandat === null) {
+            throw new HttpNotFoundException($request, 'Mandat nicht gefunden.');
+        }
+        $this->mandatService->deaktivieren((int) $mandat['id'], $this->benutzerId($request));
+        $this->flash->erfolg('Das Mandat wurde deaktiviert.');
+
+        return $this->zuTab($response, (int) $mandat['mitglied_id'], 'mandate');
+    }
+
+    public function gebuehrAnlegen(Request $request, Response $response, array $args): Response
+    {
+        $mitglied = $this->laden((int) $args['id'], $request);
+        $d = (array) $request->getParsedBody();
+        $betrag = (float) str_replace(',', '.', (string) ($d['betrag'] ?? ''));
+        $jahr = ctype_digit((string) ($d['jahr'] ?? '')) ? (int) $d['jahr'] : (int) date('Y');
+        if ($betrag <= 0) {
+            $this->flash->fehler('Bitte einen gültigen Gebührenbetrag angeben.');
+
+            return $this->zuTab($response, (int) $mitglied['id'], 'beitraege');
+        }
+        $this->sollstellung->gebuehrAnlegen((int) $mitglied['id'], (string) $betrag, $jahr, $this->benutzerId($request));
+        $this->flash->erfolg('Die Gebühr wurde als offene Forderung angelegt.');
+
+        return $this->zuTab($response, (int) $mitglied['id'], 'beitraege');
+    }
+
+    public function forderungStornieren(Request $request, Response $response, array $args): Response
+    {
+        $forderung = $this->forderungen->findePerId((int) $args['forderungId']);
+        if ($forderung === null) {
+            throw new HttpNotFoundException($request, 'Forderung nicht gefunden.');
+        }
+        try {
+            $this->sollstellung->stornieren((int) $forderung['id'], $this->benutzerId($request));
+            $this->flash->erfolg('Die Forderung wurde storniert.');
+        } catch (\DomainException $e) {
+            $this->flash->fehler($e->getMessage());
+        }
+
+        return $this->zuTab($response, (int) $forderung['mitglied_id'], 'beitraege');
+    }
+
+    public function forderungBezahlt(Request $request, Response $response, array $args): Response
+    {
+        $forderung = $this->forderungen->findePerId((int) $args['forderungId']);
+        if ($forderung === null) {
+            throw new HttpNotFoundException($request, 'Forderung nicht gefunden.');
+        }
+        $d = (array) $request->getParsedBody();
+        try {
+            $this->sollstellung->alsBezahltMarkieren(
+                (int) $forderung['id'],
+                (string) ($d['zahlungsart'] ?? 'ueberweisung'),
+                trim((string) ($d['datum'] ?? '')) ?: null,
+                $this->benutzerId($request),
+            );
+            $this->flash->erfolg('Die Forderung wurde als bezahlt markiert.');
+        } catch (\DomainException $e) {
+            $this->flash->fehler($e->getMessage());
+        }
+
+        return $this->zuTab($response, (int) $forderung['mitglied_id'], 'beitraege');
+    }
+
     // ---- intern ----------------------------------------------------------
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function mandateAnzeige(int $mitgliedId): array
+    {
+        $liste = [];
+        foreach ($this->mandate->findePerMitglied($mitgliedId) as $mandat) {
+            $mandat['iban_maskiert'] = $this->maskiere($mandat);
+            $mandat['status_label'] = \App\Domain\Mandatsstatus::label((string) $mandat['status']);
+            $mandat['status_badge'] = \App\Domain\Mandatsstatus::badge((string) $mandat['status']);
+            $mandat['verfallen'] = $this->mandatService->istVerfallen($mandat);
+            $liste[] = $mandat;
+        }
+
+        return $liste;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function forderungenAnzeige(int $mitgliedId): array
+    {
+        $liste = [];
+        foreach ($this->forderungen->findePerMitglied($mitgliedId) as $f) {
+            $f['status_label'] = \App\Domain\Forderungsstatus::label((string) $f['status']);
+            $f['status_badge'] = \App\Domain\Forderungsstatus::badge((string) $f['status']);
+            $liste[] = $f;
+        }
+
+        return $liste;
+    }
+
+    /**
+     * @param array<string,mixed> $mandat
+     */
+    private function maskiere(array $mandat): string
+    {
+        try {
+            return $this->krypto->maskiereIban($this->krypto->entschluesseln((string) $mandat['iban_verschluesselt']));
+        } catch (\Throwable) {
+            return '…';
+        }
+    }
+
+    private function zuTab(Response $response, int $id, string $tab): Response
+    {
+        return $response->withHeader('Location', '/mitglieder/' . $id . '?tab=' . $tab)->withStatus(302);
+    }
+
+    // ---- intern (Status/Historie) ----------------------------------------
 
     private function statusAktion(Request $request, Response $response, int $id, callable $aktion): Response
     {

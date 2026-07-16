@@ -150,6 +150,48 @@ final class TestDb
                 bestaetigungs_token TEXT NOT NULL UNIQUE,
                 bestaetigt_am TEXT NULL
             )',
+            // SEPA-Mandate & Sollstellung (AP2) — portabel zu migrations/003.
+            'CREATE TABLE mandat (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mitglied_id INTEGER NOT NULL,
+                lfd_nr INTEGER NOT NULL DEFAULT 1,
+                mandatsreferenz TEXT NOT NULL UNIQUE,
+                iban_verschluesselt TEXT NOT NULL,
+                bic TEXT NULL,
+                kontoinhaber TEXT NOT NULL,
+                erteilt_am TEXT NULL,
+                status TEXT NOT NULL DEFAULT "aktiv",
+                zuletzt_genutzt_am TEXT NULL,
+                sequenz_genutzt INTEGER NOT NULL DEFAULT 0,
+                aktiv_mitglied INTEGER NULL UNIQUE,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE TABLE mandat_version (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mandat_id INTEGER NOT NULL,
+                version_nr INTEGER NOT NULL,
+                snapshot TEXT NOT NULL,
+                geaenderte_felder TEXT NOT NULL,
+                geaendert_von INTEGER NULL,
+                geaendert_am TEXT NOT NULL,
+                ist_revert_von INTEGER NULL
+            )',
+            'CREATE TABLE forderung (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mitglied_id INTEGER NOT NULL,
+                jahr INTEGER NOT NULL,
+                betrag TEXT NOT NULL,
+                typ TEXT NOT NULL DEFAULT "beitrag",
+                status TEXT NOT NULL DEFAULT "offen",
+                einzugslauf_id INTEGER NULL,
+                bezahlt_am TEXT NULL,
+                zahlungsart TEXT NULL,
+                beitrag_jahr INTEGER NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE (mitglied_id, beitrag_jahr)
+            )',
         ];
     }
 }

@@ -116,6 +116,7 @@ return static function (array $settings): ContainerInterface {
             $c->get(Flash::class),
             $c->get(Einstellungen::class),
             $c->get(Audit::class),
+            $c->get(Krypto::class),
             (array) $settings['mail'],
         ),
     ]);

@@ -44,6 +44,19 @@ final class AntragRepository
         return $this->db->eineZeile('SELECT * FROM antrag_rohdaten WHERE bestaetigungs_token = :t', ['t' => $token]);
     }
 
+    /**
+     * Jüngster Antrag eines Mitglieds (für die Mandatsanlage bei Aktivierung).
+     *
+     * @return array<string,mixed>|null
+     */
+    public function neuesterFuerMitglied(int $mitgliedId): ?array
+    {
+        return $this->db->eineZeile(
+            'SELECT * FROM antrag_rohdaten WHERE mitglied_id = :id ORDER BY id DESC LIMIT 1',
+            ['id' => $mitgliedId],
+        );
+    }
+
     public function markiereBestaetigt(int $id): void
     {
         $this->db->ausfuehren(

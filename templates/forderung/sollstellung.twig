@@ -1,0 +1,51 @@
+{% extends 'layout.twig' %}
+{% block titel %}Sollstellung{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Sollstellung</h1>
+            <p class="untertitel">Erzeugt je aktivem Mitglied eine Beitragsforderung für das gewählte Jahr. Idempotent — bereits vorhandene bleiben unberührt.</p>
+        </div>
+        <a href="/forderungen" class="button button-sekundaer">Offene Posten</a>
+    </div>
+
+    <div class="karte eng">
+        <form method="get" action="/sollstellung" class="zeile">
+            <label for="jahr" style="margin:0">Jahr</label>
+            <input type="number" id="jahr" name="jahr" value="{{ jahr }}" style="max-width:120px">
+            <button class="button button-sekundaer">Vorschau</button>
+        </form>
+    </div>
+
+    <div class="karte">
+        <div class="seitenkopf" style="margin-bottom:10px">
+            <h2 style="margin:0">Vorschau {{ jahr }}</h2>
+            <div>{{ vorschau.anzahl }} Mitglieder · Summe {{ vorschau.summe|replace({'.': ','}) }} €</div>
+        </div>
+
+        {% if vorschau.anzahl == 0 %}
+            <p class="feld-hinweis">Für {{ jahr }} sind keine neuen Forderungen nötig — alle betroffenen Mitglieder haben bereits eine.</p>
+        {% else %}
+            <div class="tabelle-huelle">
+                <table class="daten">
+                    <thead><tr><th>Nr.</th><th>Name</th><th>Status</th><th class="num">Beitrag</th></tr></thead>
+                    <tbody>
+                        {% for m in vorschau.zeilen %}
+                            <tr>
+                                <td class="mono">{{ m.mitgliedsnummer ? '%04d'|format(m.mitgliedsnummer) : '—' }}</td>
+                                <td>{{ m.anrede == 'familie' ? 'Familie ' ~ m.nachname : (m.vorname ? m.vorname ~ ' ' ~ m.nachname : m.nachname) }}</td>
+                                <td>{{ m.status }}</td>
+                                <td class="num">{{ '%.2f'|format(m.jahresbeitrag)|replace({'.': ','}) }} €</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" action="/sollstellung" class="abstand-oben" onsubmit="return confirm('Sollstellung {{ jahr }} jetzt ausführen?')">
+                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                <input type="hidden" name="jahr" value="{{ jahr }}">
+                <button class="button">Sollstellung {{ jahr }} ausführen</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

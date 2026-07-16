@@ -6,11 +6,16 @@ namespace App\Tests;
 
 use App\Domain\Mitgliedsstatus;
 use App\Repository\AntragRepository;
+use App\Repository\ForderungRepository;
+use App\Repository\MandatRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\AnredeDienst;
 use App\Service\Audit;
+use App\Service\Krypto;
 use App\Service\MailDienst;
+use App\Service\MandatService;
 use App\Service\MitgliedService;
+use App\Service\SollstellungService;
 use App\Service\Versionierung;
 use App\Support\Db;
 use App\Tests\Support\TestDb;
@@ -26,14 +31,29 @@ final class MitgliedServiceTest extends TestCase
     {
         $this->db = TestDb::erstellen();
         $this->mitglieder = new MitgliedRepository($this->db);
+        $versionierung = new Versionierung($this->db);
+        $audit = new Audit($this->db);
+        $krypto = new Krypto(base64_encode(str_repeat("\x04", SODIUM_CRYPTO_SECRETBOX_KEYBYTES)));
+        $mandatService = new MandatService(
+            $this->db,
+            $versionierung,
+            new MandatRepository($this->db),
+            $this->mitglieder,
+            new AntragRepository($this->db),
+            $krypto,
+            $audit,
+        );
+        $sollstellung = new SollstellungService($this->db, new ForderungRepository($this->db), $audit);
         $this->service = new MitgliedService(
             $this->db,
-            new Versionierung($this->db),
+            $versionierung,
             $this->mitglieder,
             new AntragRepository($this->db),
             new MailDienst($this->db),
             new AnredeDienst(),
-            new Audit($this->db),
+            $audit,
+            $mandatService,
+            $sollstellung,
         );
     }
 
