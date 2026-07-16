@@ -34,6 +34,28 @@
                 <label>SMTP-Verbindung (aus .env, nur Anzeige)</label>
                 <input type="text" value="{{ smtp_dsn_anzeige }}" readonly>
             </div>
+
+            <h2>Vereins-Stammdaten (SEPA)</h2>
+            <div class="form-raster">
+                <div class="form-group spanne-2">
+                    <label for="verein_name">Name des Zahlungsempfängers</label>
+                    <input type="text" id="verein_name" name="verein_name" value="{{ verein_name }}">
+                </div>
+                <div class="form-group">
+                    <label for="glaeubiger_id">Gläubiger-Identifikationsnummer</label>
+                    <input type="text" id="glaeubiger_id" name="glaeubiger_id" value="{{ glaeubiger_id }}">
+                </div>
+                <div class="form-group">
+                    <label for="verein_bic">Vereins-BIC (optional)</label>
+                    <input type="text" id="verein_bic" name="verein_bic" value="{{ verein_bic }}">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="verein_iban">Vereins-IBAN</label>
+                    <input type="text" id="verein_iban" name="verein_iban" placeholder="{{ verein_iban_maske ?: 'DE.. (verschlüsselt gespeichert)' }}">
+                    <div class="feld-hinweis">{% if verein_iban_maske %}Gespeichert: {{ verein_iban_maske }}. {% endif %}Leer lassen, um die gespeicherte IBAN nicht zu ändern.</div>
+                </div>
+            </div>
+
             <button type="submit" class="button">Speichern</button>
         </form>
     </div>

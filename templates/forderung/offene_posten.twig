@@ -1,0 +1,52 @@
+{% extends 'layout.twig' %}
+{% block titel %}Offene Posten{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Offene Posten</h1>
+            <p class="untertitel">{{ ergebnis.anzahl }} Forderungen · Summe {{ ergebnis.summe|replace({'.': ','}) }} €</p>
+        </div>
+        <a href="/sollstellung" class="button">Sollstellung</a>
+    </div>
+
+    <div class="karte eng">
+        <form method="get" action="/forderungen" class="zeile">
+            <select name="jahr">
+                <option value="">alle Jahre</option>
+                {% for j in jahre %}<option value="{{ j }}" {{ filter.jahr == j ? 'selected' : '' }}>{{ j }}</option>{% endfor %}
+            </select>
+            <select name="status">
+                <option value="">alle Status</option>
+                {% for wert, label in statusliste %}<option value="{{ wert }}" {{ filter.status == wert ? 'selected' : '' }}>{{ label }}</option>{% endfor %}
+            </select>
+            <select name="zahlweise">
+                <option value="">alle Zahlweisen</option>
+                <option value="lastschrift" {{ filter.zahlweise == 'lastschrift' ? 'selected' : '' }}>Lastschrift</option>
+                <option value="selbstzahler" {{ filter.zahlweise == 'selbstzahler' ? 'selected' : '' }}>Selbstzahler</option>
+            </select>
+            <button class="button button-sekundaer">Filtern</button>
+            <a href="/forderungen" class="button button-sekundaer">Zurücksetzen</a>
+        </form>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead><tr><th>Jahr</th><th>Nr.</th><th>Name</th><th>Typ</th><th>Zahlweise</th><th class="num">Betrag</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for f in ergebnis.zeilen %}
+                    <tr>
+                        <td>{{ f.jahr }}</td>
+                        <td class="mono">{{ f.mitgliedsnummer ? '%04d'|format(f.mitgliedsnummer) : '—' }}</td>
+                        <td><a href="/mitglieder/{{ f.mitglied_id }}?tab=beitraege">{{ f.anrede == 'familie' ? 'Familie ' ~ f.nachname : (f.vorname ? f.vorname ~ ' ' ~ f.nachname : f.nachname) }}</a></td>
+                        <td>{{ f.typ == 'beitrag' ? 'Beitrag' : 'Gebühr' }}</td>
+                        <td>{{ f.zahlweise == 'lastschrift' ? 'Lastschrift' : 'Selbstzahler' }}</td>
+                        <td class="num">{{ '%.2f'|format(f.betrag)|replace({'.': ','}) }} €</td>
+                        <td><span class="badge {{ {'offen':'badge-info','im_einzug':'badge-warn','bezahlt':'badge-erfolg','ruecklastschrift':'badge-fehler','storniert':'badge-neutral'}[f.status] }}">{{ statusliste[f.status] }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center">Keine Forderungen gefunden.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

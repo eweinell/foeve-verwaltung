@@ -8,6 +8,7 @@ use App\Controller\AuthController;
 use App\Controller\BenutzerController;
 use App\Controller\DashboardController;
 use App\Controller\EinstellungenController;
+use App\Controller\ForderungController;
 use App\Controller\MitgliedController;
 use App\Controller\ProfilController;
 use App\Middleware\AuthMiddleware;
@@ -53,6 +54,20 @@ return static function (App $app): void {
         $group->post('/mitglieder/{id:[0-9]+}/kuendigung-widerrufen', [MitgliedController::class, 'kuendigungWiderrufen']);
         $group->post('/mitglieder/{id:[0-9]+}/austritt', [MitgliedController::class, 'austritt']);
         $group->post('/mitglieder/{id:[0-9]+}/revert', [MitgliedController::class, 'revert']);
+
+        // Mandate & Beiträge am Mitglied (AP2)
+        $group->post('/mitglieder/{id:[0-9]+}/zahlweise', [MitgliedController::class, 'zahlweiseUmstellen']);
+        $group->post('/mitglieder/{id:[0-9]+}/mandat', [MitgliedController::class, 'mandatAnlegen']);
+        $group->post('/mitglieder/{id:[0-9]+}/gebuehr', [MitgliedController::class, 'gebuehrAnlegen']);
+        $group->post('/mandat/{mandatId:[0-9]+}/widerruf', [MitgliedController::class, 'mandatWiderrufen']);
+        $group->post('/mandat/{mandatId:[0-9]+}/deaktivieren', [MitgliedController::class, 'mandatDeaktivieren']);
+        $group->post('/forderung/{forderungId:[0-9]+}/storno', [MitgliedController::class, 'forderungStornieren']);
+        $group->post('/forderung/{forderungId:[0-9]+}/bezahlt', [MitgliedController::class, 'forderungBezahlt']);
+
+        // Sollstellung & offene Posten (AP2)
+        $group->get('/sollstellung', [ForderungController::class, 'sollstellung']);
+        $group->post('/sollstellung', [ForderungController::class, 'sollstellungAusfuehren']);
+        $group->get('/forderungen', [ForderungController::class, 'offenePosten']);
 
         $group->get('/passwort-aendern', [AuthController::class, 'passwortAendernFormular']);
         $group->post('/passwort-aendern', [AuthController::class, 'passwortAendern']);
