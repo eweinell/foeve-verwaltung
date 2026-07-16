@@ -1,0 +1,32 @@
+{% extends 'layout.twig' %}
+{% block titel %}Passwort ändern{% endblock %}
+{% block container_klasse %}{{ aktueller_benutzer ? 'inhalt' : 'inhalt-schmal' }}{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Passwort ändern</h1>
+            {% if pflicht %}
+                <p class="untertitel">Sie melden sich mit einem Einmal-Passwort an. Bitte vergeben Sie jetzt ein eigenes Passwort.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="karte" style="max-width:520px">
+        <form method="post" action="/passwort-aendern" class="stapel">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="aktuell">Aktuelles Passwort</label>
+                <input type="password" id="aktuell" name="aktuell" autocomplete="current-password" required>
+            </div>
+            <div class="form-group">
+                <label for="neu">Neues Passwort</label>
+                <input type="password" id="neu" name="neu" autocomplete="new-password" required>
+                <div class="feld-hinweis">Mindestens 10 Zeichen.</div>
+            </div>
+            <div class="form-group">
+                <label for="neu_wdh">Neues Passwort (Wiederholung)</label>
+                <input type="password" id="neu_wdh" name="neu_wdh" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="button">Passwort speichern</button>
+        </form>
+    </div>
+{% endblock %}

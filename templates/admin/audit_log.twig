@@ -1,0 +1,47 @@
+{% extends 'layout.twig' %}
+{% block titel %}Audit-Log{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Audit-Log</h1>
+            <p class="untertitel">Sicherheitsrelevante Ereignisse, neueste zuerst.</p>
+        </div>
+    </div>
+
+    <form method="get" action="/einstellungen/audit" class="zeile" style="margin-bottom:16px">
+        <select name="aktion" onchange="this.form.submit()">
+            <option value="">Alle Aktionen</option>
+            {% for a in aktionen %}
+                <option value="{{ a }}" {{ a == filter_aktion ? 'selected' : '' }}>{{ a }}</option>
+            {% endfor %}
+        </select>
+        <noscript><button type="submit" class="button button-sekundaer button-klein">Filtern</button></noscript>
+    </form>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead>
+                <tr>
+                    <th>Zeitpunkt</th>
+                    <th>Benutzer</th>
+                    <th>Aktion</th>
+                    <th>Entität</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in eintraege %}
+                    <tr>
+                        <td class="mono">{{ e.zeitpunkt|date('d.m.Y H:i:s') }}</td>
+                        <td>{{ e.benutzer_name ?? '—' }}</td>
+                        <td>{{ e.aktion }}</td>
+                        <td>{{ e.entitaet ? e.entitaet ~ (e.entitaet_id ? '#' ~ e.entitaet_id : '') : '—' }}</td>
+                        <td class="mono" style="font-size:12px">{{ e.details ?? '' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center">Keine Einträge.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

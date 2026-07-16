@@ -1,0 +1,40 @@
+{% extends 'layout.twig' %}
+{% block titel %}Einstellungen{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Einstellungen</h1>
+            <p class="untertitel">Verwaltung von Benutzern, Versand und Protokoll.</p>
+        </div>
+    </div>
+
+    <div class="zeile abstand-oben" style="margin-bottom:24px">
+        <a href="/einstellungen/benutzer" class="button button-sekundaer">Benutzerverwaltung</a>
+        <a href="/einstellungen/audit" class="button button-sekundaer">Audit-Log</a>
+    </div>
+
+    <div class="karte" style="max-width:640px">
+        <h2 style="margin-top:0">E-Mail-Versand</h2>
+        <form method="post" action="/einstellungen" class="stapel">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-group">
+                <label for="mail_rate">Drosselung (Mails pro Minute)</label>
+                <input type="number" id="mail_rate" name="mail_rate_pro_minute" min="1" max="120" value="{{ mail_rate }}">
+                <div class="feld-hinweis">Der Cron-Versand sendet höchstens so viele Mails je Lauf.</div>
+            </div>
+            <div class="form-group">
+                <label for="absender_name">Absendername</label>
+                <input type="text" id="absender_name" name="absender_name" value="{{ absender_name }}">
+            </div>
+            <div class="form-group">
+                <label for="absender_adresse">Absenderadresse</label>
+                <input type="email" id="absender_adresse" name="absender_adresse" value="{{ absender_adresse }}">
+            </div>
+            <div class="form-group">
+                <label>SMTP-Verbindung (aus .env, nur Anzeige)</label>
+                <input type="text" value="{{ smtp_dsn_anzeige }}" readonly>
+            </div>
+            <button type="submit" class="button">Speichern</button>
+        </form>
+    </div>
+{% endblock %}

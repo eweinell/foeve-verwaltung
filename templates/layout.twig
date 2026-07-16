@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titel %}Vereinsverwaltung{% endblock %} — Förderverein Gymnasium Herzogenrath</title>
+    <link rel="icon" href="/img/favicon.png" type="image/png">
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+{% if aktueller_benutzer %}
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="topbar-marke" href="/">
+                <img src="/img/logo.png" alt="Förderverein Gymnasium Herzogenrath">
+                <span>Vereinsverwaltung</span>
+            </a>
+            <nav class="hauptnav">
+                {% set nav = [
+                    {'schluessel': 'mitglieder',    'titel': 'Mitglieder',   'pfad': '#', 'bereit': false},
+                    {'schluessel': 'antraege',      'titel': 'Anträge',      'pfad': '#', 'bereit': false},
+                    {'schluessel': 'beitraege',     'titel': 'Beiträge',     'pfad': '#', 'bereit': false},
+                    {'schluessel': 'einzug',        'titel': 'Einzug',       'pfad': '#', 'bereit': false},
+                    {'schluessel': 'email',         'titel': 'E-Mail',       'pfad': '#', 'bereit': false},
+                    {'schluessel': 'statistik',     'titel': 'Statistik',    'pfad': '#', 'bereit': false}
+                ] %}
+                {% for eintrag in nav %}
+                    {% if eintrag.bereit %}
+                        <a href="{{ eintrag.pfad }}" class="{{ aktuelle_seite == eintrag.schluessel ? 'aktiv' : '' }}">{{ eintrag.titel }}</a>
+                    {% else %}
+                        <a href="{{ eintrag.pfad }}" title="Folgt in einem späteren Arbeitspaket" aria-disabled="true" style="opacity:.55;cursor:not-allowed">{{ eintrag.titel }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if aktueller_benutzer.rolle == 'admin' %}
+                    <a href="/einstellungen" class="{{ aktuelle_seite == 'einstellungen' ? 'aktiv' : '' }}">Einstellungen</a>
+                {% endif %}
+            </nav>
+            <div class="topbar-benutzer">
+                <a href="/profil" title="Profil & Zwei-Faktor">{{ aktueller_benutzer.name }}</a>
+                <form method="post" action="/logout" style="margin:0">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button type="submit" class="button button-sekundaer button-klein">Abmelden</button>
+                </form>
+            </div>
+        </div>
+    </header>
+{% endif %}
+
+<main class="{% block container_klasse %}inhalt{% endblock %}">
+    {% for flash in flashes %}
+        <div class="alert alert-{{ flash.typ }}">{{ flash.text }}</div>
+    {% endfor %}
+    {% block inhalt %}{% endblock %}
+</main>
+
+<footer class="fusszeile">
+    Verein der Freunde und Förderer des Städtischen Gymnasiums Herzogenrath e.V. — Verwaltung
+</footer>
+</body>
+</html>
