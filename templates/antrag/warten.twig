@@ -1,0 +1,20 @@
+{% extends 'layout.twig' %}
+{% block titel %}Bitte E-Mail bestätigen{% endblock %}
+{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block inhalt %}
+    <div class="karte text-center">
+        <img src="/img/logo.png" alt="" style="height:40px">
+        <h1 style="margin-top:12px">Fast geschafft!</h1>
+        <p>Wir haben Ihnen eine E-Mail geschickt. Bitte öffnen Sie die Nachricht und klicken Sie auf
+            <strong>„Jetzt bestätigen"</strong>, um Ihren Antrag abzuschließen.</p>
+        <p class="feld-hinweis">Keine E-Mail erhalten? Sehen Sie auch im Spam-Ordner nach.</p>
+
+        {% if token %}
+            <form method="post" action="/antrag/erneut-senden" class="abstand-oben">
+                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                <input type="hidden" name="token" value="{{ token }}">
+                <button type="submit" class="button button-sekundaer">E-Mail erneut senden</button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

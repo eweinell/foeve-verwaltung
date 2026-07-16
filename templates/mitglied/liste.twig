@@ -1,0 +1,102 @@
+{% extends 'layout.twig' %}
+{% block titel %}Mitglieder{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Mitglieder</h1>
+            <p class="untertitel">{{ ergebnis.gesamt }} Datensätze{% if filter.status %} · Filter: {{ statusliste[filter.status] }}{% endif %}</p>
+        </div>
+        <a href="/antrag" class="button button-sekundaer" target="_blank" rel="noopener">Antragsformular ansehen</a>
+    </div>
+
+    <div class="karte eng">
+        <form method="get" action="/mitglieder" class="form-raster">
+            <div class="form-group">
+                <label for="q">Suche</label>
+                <input type="search" id="q" name="q" value="{{ filter.q }}" placeholder="Name, Nummer, Ort, E-Mail">
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="">alle</option>
+                    {% for wert, label in statusliste %}
+                        <option value="{{ wert }}" {{ filter.status == wert ? 'selected' : '' }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="zahlweise">Zahlweise</label>
+                <select id="zahlweise" name="zahlweise">
+                    <option value="">alle</option>
+                    <option value="lastschrift" {{ filter.zahlweise == 'lastschrift' ? 'selected' : '' }}>Lastschrift</option>
+                    <option value="selbstzahler" {{ filter.zahlweise == 'selbstzahler' ? 'selected' : '' }}>Selbstzahler</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="land">Land</label>
+                <select id="land" name="land">
+                    <option value="">alle</option>
+                    {% for code, name in laender %}
+                        <option value="{{ code }}" {{ filter.land == code ? 'selected' : '' }}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="email">E-Mail</label>
+                <select id="email" name="email">
+                    <option value="">egal</option>
+                    <option value="ja" {{ filter.email == 'ja' ? 'selected' : '' }}>vorhanden</option>
+                    <option value="nein" {{ filter.email == 'nein' ? 'selected' : '' }}>keine</option>
+                </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;gap:8px">
+                <button type="submit" class="button">Filtern</button>
+                <a href="/mitglieder" class="button button-sekundaer">Zurücksetzen</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Name</th>
+                    <th>Ort</th>
+                    <th>Status</th>
+                    <th class="num">Beitrag</th>
+                    <th>Zahlweise</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in ergebnis.zeilen %}
+                    <tr>
+                        <td class="mono">{{ m.mitgliedsnummer ? '%04d'|format(m.mitgliedsnummer) : '—' }}</td>
+                        <td>
+                            {{ m.anrede == 'familie' ? 'Familie ' ~ m.nachname : (m.vorname ? m.vorname ~ ' ' ~ m.nachname : m.nachname) }}
+                            {% if m.kein_email_kontakt %}<span class="badge badge-neutral" title="kein E-Mail-Kontakt">Post</span>{% endif %}
+                        </td>
+                        <td>{{ m.plz }} {{ m.ort }}{% if m.land != 'DE' %} ({{ m.land }}){% endif %}</td>
+                        <td><span class="badge {{ status_meta[m.status].badge }}">{{ status_meta[m.status].label }}</span></td>
+                        <td class="num">{{ '%.2f'|format(m.jahresbeitrag)|replace({'.': ','}) }} €</td>
+                        <td>{{ m.zahlweise == 'lastschrift' ? 'Lastschrift' : 'Selbstzahler' }}</td>
+                        <td><a href="/mitglieder/{{ m.id }}" class="button button-sekundaer button-klein">Details</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center">Keine Mitglieder gefunden.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if ergebnis.seiten > 1 %}
+        <div class="zeile abstand-oben" style="justify-content:center">
+            {% for s in 1..ergebnis.seiten %}
+                {% set qs = filter|merge({'seite': s, 'sort': sort, 'richtung': richtung}) %}
+                <a href="/mitglieder?{{ qs|url_encode }}"
+                   class="button button-klein {{ s == ergebnis.seite ? '' : 'button-sekundaer' }}">{{ s }}</a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,146 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\Domain\Mitgliedsstatus;
+use App\Repository\AntragRepository;
+use App\Repository\MitgliedRepository;
+use App\Service\AnredeDienst;
+use App\Service\Audit;
+use App\Service\MailDienst;
+use App\Service\MitgliedService;
+use App\Service\Versionierung;
+use App\Support\Db;
+use App\Tests\Support\TestDb;
+use PHPUnit\Framework\TestCase;
+
+final class MitgliedServiceTest extends TestCase
+{
+    private Db $db;
+    private MitgliedService $service;
+    private MitgliedRepository $mitglieder;
+
+    protected function setUp(): void
+    {
+        $this->db = TestDb::erstellen();
+        $this->mitglieder = new MitgliedRepository($this->db);
+        $this->service = new MitgliedService(
+            $this->db,
+            new Versionierung($this->db),
+            $this->mitglieder,
+            new AntragRepository($this->db),
+            new MailDienst($this->db),
+            new AnredeDienst(),
+            new Audit($this->db),
+        );
+    }
+
+    private function seedBeantragt(string $nachname = 'Muster'): int
+    {
+        return $this->mitglieder->anlegen([
+            'status'   => Mitgliedsstatus::BEANTRAGT,
+            'anrede'   => 'familie',
+            'nachname' => $nachname,
+            'email'    => strtolower($nachname) . '@example.de',
+            'jahresbeitrag' => '30.00',
+        ]);
+    }
+
+    public function testAktivierenVergibtNummernAb2000(): void
+    {
+        $a = $this->seedBeantragt('Alpha');
+        $b = $this->seedBeantragt('Beta');
+
+        $nrA = $this->service->aktivieren($a, 1);
+        $nrB = $this->service->aktivieren($b, 1);
+
+        self::assertSame(2000, $nrA);
+        self::assertSame(2001, $nrB);
+
+        $mitglied = $this->mitglieder->findePerId($a);
+        self::assertSame(Mitgliedsstatus::AKTIV, $mitglied['status']);
+        self::assertNotNull($mitglied['eintrittsdatum']);
+
+        // Begrüßungsmail in der Queue.
+        self::assertSame(2, (int) $this->db->einWert("SELECT COUNT(*) FROM email_queue WHERE betreff = 'Willkommen im Förderverein'"));
+        // Audit-Eintrag.
+        self::assertGreaterThanOrEqual(1, (int) $this->db->einWert("SELECT COUNT(*) FROM audit_log WHERE aktion = 'mitglied_aktiviert'"));
+    }
+
+    public function testAktivierenNurAusBeantragt(): void
+    {
+        $id = $this->seedBeantragt();
+        $this->service->aktivieren($id, 1);
+
+        $this->expectException(\DomainException::class);
+        $this->service->aktivieren($id, 1); // schon aktiv
+    }
+
+    public function testKuendigenUndWiderruf(): void
+    {
+        $id = $this->seedBeantragt();
+        $this->service->aktivieren($id, 1);
+
+        $this->service->kuendigen($id, 1);
+        $mitglied = $this->mitglieder->findePerId($id);
+        self::assertSame(Mitgliedsstatus::GEKUENDIGT, $mitglied['status']);
+        self::assertSame((new \DateTimeImmutable('now', new \DateTimeZone('Europe/Berlin')))->format('Y') . '-12-31', substr((string) $mitglied['wirksam_zum'], 0, 10));
+        self::assertSame(1, (int) $this->db->einWert("SELECT COUNT(*) FROM email_queue WHERE betreff = 'Kündigungsbestätigung'"));
+
+        $this->service->kuendigungWiderrufen($id, 1);
+        $mitglied = $this->mitglieder->findePerId($id);
+        self::assertSame(Mitgliedsstatus::AKTIV, $mitglied['status']);
+        self::assertNull($mitglied['wirksam_zum']);
+    }
+
+    public function testStammdatenAenderungErzeugtVersionMitDiff(): void
+    {
+        $id = $this->seedBeantragt('Alt');
+        $ergebnis = $this->service->stammdatenAendern($id, ['nachname' => 'Neu'], 1);
+
+        self::assertContains('nachname', $ergebnis['geaenderte_felder']);
+        self::assertSame('Neu', $this->db->einWert('SELECT nachname FROM mitglied WHERE id = :id', ['id' => $id]));
+
+        // Snapshot hält den alten Wert.
+        $snapshot = json_decode((string) $this->db->einWert('SELECT snapshot FROM mitglied_version WHERE id = :id', ['id' => $ergebnis['version_id']]), true);
+        self::assertSame('Alt', $snapshot['nachname']);
+    }
+
+    public function testRevertStelltAltenStandWiederHer(): void
+    {
+        $id = $this->seedBeantragt('Original');
+        $v = $this->service->stammdatenAendern($id, ['nachname' => 'Geaendert'], 1);
+
+        $this->service->revert($id, (int) $v['version_id'], 9);
+
+        self::assertSame('Original', $this->db->einWert('SELECT nachname FROM mitglied WHERE id = :id', ['id' => $id]));
+        $revVersion = $this->db->eineZeile('SELECT * FROM mitglied_version ORDER BY id DESC LIMIT 1');
+        self::assertSame((int) $v['version_id'], (int) $revVersion['ist_revert_von']);
+    }
+
+    public function testBeitragAenderung(): void
+    {
+        $id = $this->seedBeantragt();
+        $this->service->beitragAendern($id, '60,00', 1);
+
+        self::assertSame('60.00', $this->db->einWert('SELECT jahresbeitrag FROM mitglied WHERE id = :id', ['id' => $id]));
+    }
+
+    public function testVerwerfeUnbestaetigte(): void
+    {
+        // Unbestätigt, „alt" (createdvor 40 Tagen) — createdat direkt setzen.
+        $id = $this->mitglieder->anlegen(['status' => Mitgliedsstatus::UNBESTAETIGT, 'nachname' => 'Alt', 'anrede' => 'herr']);
+        $alt = (new \DateTimeImmutable('-40 days'))->format('Y-m-d H:i:s');
+        $this->db->ausfuehren('UPDATE mitglied SET created_at = :c WHERE id = :id', ['c' => $alt, 'id' => $id]);
+        $antragId = (new AntragRepository($this->db))->anlegen($id, ['x' => 1], null, 'tok-' . $id);
+
+        $anzahl = $this->service->verwerfeUnbestaetigte(30);
+
+        self::assertSame(1, $anzahl);
+        self::assertSame(Mitgliedsstatus::VERWORFEN, $this->db->einWert('SELECT status FROM mitglied WHERE id = :id', ['id' => $id]));
+        // Token entwertet.
+        self::assertNull((new AntragRepository($this->db))->findePerToken('tok-' . $id));
+    }
+}

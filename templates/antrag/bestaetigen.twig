@@ -1,0 +1,22 @@
+{% extends 'layout.twig' %}
+{% block titel %}Antrag bestätigen{% endblock %}
+{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block inhalt %}
+    <div class="karte text-center">
+        <img src="/img/logo.png" alt="" style="height:40px">
+        <h1 style="margin-top:12px">Antrag bestätigen</h1>
+        <p>Bitte bestätigen Sie mit einem Klick auf den Button, dass Sie diesen Aufnahmeantrag
+            gestellt haben und dem SEPA-Lastschriftmandat zustimmen.</p>
+
+        {% if token %}
+            {# Bewusst per POST — ein automatischer GET-Abruf (Mail-Scanner) bestätigt NICHT. #}
+            <form method="post" action="/antrag/bestaetigen" class="abstand-oben">
+                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                <input type="hidden" name="token" value="{{ token }}">
+                <button type="submit" class="button button-voll">Jetzt bestätigen</button>
+            </form>
+        {% else %}
+            <div class="alert alert-error">Der Bestätigungslink ist unvollständig.</div>
+        {% endif %}
+    </div>
+{% endblock %}

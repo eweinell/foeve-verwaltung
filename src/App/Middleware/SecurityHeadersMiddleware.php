@@ -21,10 +21,20 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
         // 'self' überall — keine CDNs im internen Bereich. data: nur für Bilder
         // (TOTP-QR wird als data:-URI eingebunden).
+        // Einzige Ausnahme (KONZEPT §F2): das TrustCaptcha-Skript auf der
+        // öffentlichen Antragsseite (/antrag …).
+        $istAntrag = str_starts_with($request->getUri()->getPath(), '/antrag');
+        $tc = 'https://cdn.trustcaptcha.com';
+        $tcApi = 'https://api.trustcaptcha.com';
+
+        $scriptSrc = $istAntrag ? "script-src 'self' {$tc}; " : "script-src 'self'; ";
+        $connectSrc = $istAntrag ? "connect-src 'self' {$tcApi}; " : "connect-src 'self'; ";
+
         $csp = "default-src 'self'; "
             . "img-src 'self' data:; "
             . "style-src 'self'; "
-            . "script-src 'self'; "
+            . $scriptSrc
+            . $connectSrc
             . "font-src 'self'; "
             . "form-action 'self'; "
             . "base-uri 'self'; "

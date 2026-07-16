@@ -1,0 +1,170 @@
+{% extends 'layout.twig' %}
+{% block titel %}{{ mitglied.nachname }}{% endblock %}
+{% macro feld(label, wert) %}
+    <div class="form-group" style="margin-bottom:12px">
+        <label style="margin-bottom:2px">{{ label }}</label>
+        <div>{{ wert|default('—') }}</div>
+    </div>
+{% endmacro %}
+{% import _self as ui %}
+{% block inhalt %}
+    {% set anzeigename = mitglied.anrede == 'familie' ? 'Familie ' ~ mitglied.nachname : (mitglied.vorname ? mitglied.vorname ~ ' ' ~ mitglied.nachname : mitglied.nachname) %}
+    <div class="seitenkopf">
+        <div>
+            <h1>{{ anzeigename }}
+                <span class="badge {{ status_meta[mitglied.status].badge }}">{{ status_meta[mitglied.status].label }}</span>
+            </h1>
+            <p class="untertitel">
+                {{ mitglied.mitgliedsnummer ? 'Mitglied Nr. %04d'|format(mitglied.mitgliedsnummer) : 'Noch keine Mitgliedsnummer' }}
+                · Eintritt: {{ mitglied.eintrittsdatum ? mitglied.eintrittsdatum|date('d.m.Y') : '—' }}
+            </p>
+        </div>
+        <div class="zeile">
+            <a href="/mitglieder" class="button button-sekundaer">Zur Liste</a>
+            <a href="/mitglieder/{{ mitglied.id }}/bearbeiten" class="button">Bearbeiten</a>
+        </div>
+    </div>
+
+    {# Statusaktionen #}
+    <div class="karte eng">
+        <div class="zeile">
+            {% if mitglied.status == 'beantragt' %}
+                <form method="post" action="/mitglieder/{{ mitglied.id }}/aktivieren" style="margin:0" onsubmit="return confirm('Mitglied aktivieren und Mitgliedsnummer vergeben?')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button">Aktivieren</button>
+                </form>
+                <form method="post" action="/mitglieder/{{ mitglied.id }}/ablehnen" style="margin:0" onsubmit="return confirm('Antrag ablehnen?')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button button-gefahr">Ablehnen</button>
+                </form>
+            {% elseif mitglied.status == 'aktiv' %}
+                <details>
+                    <summary class="button button-sekundaer" style="list-style:none">Kündigung erfassen</summary>
+                    <form method="post" action="/mitglieder/{{ mitglied.id }}/kuendigen" class="karte" style="margin-top:10px;max-width:420px">
+                        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                        <div class="form-group">
+                            <label for="kuendigung_am">Kündigungsdatum</label>
+                            <input type="date" id="kuendigung_am" name="kuendigung_am">
+                        </div>
+                        <div class="form-group">
+                            <label for="wirksam_zum">Wirksam zum</label>
+                            <input type="date" id="wirksam_zum" name="wirksam_zum">
+                            <div class="feld-hinweis">Leer lassen für 31.12. des laufenden Jahres.</div>
+                        </div>
+                        <button class="button button-gefahr">Kündigung speichern</button>
+                    </form>
+                </details>
+            {% elseif mitglied.status == 'gekuendigt' %}
+                <form method="post" action="/mitglieder/{{ mitglied.id }}/kuendigung-widerrufen" style="margin:0">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button">Kündigung widerrufen</button>
+                </form>
+                <form method="post" action="/mitglieder/{{ mitglied.id }}/austritt" style="margin:0" onsubmit="return confirm('Austritt jetzt vollziehen?')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button button-sekundaer">Austritt vollziehen</button>
+                </form>
+                <span class="feld-hinweis">Wirksam zum {{ mitglied.wirksam_zum ? mitglied.wirksam_zum|date('d.m.Y') : '—' }}</span>
+            {% else %}
+                <span class="feld-hinweis">Keine Statusaktionen für den Status „{{ status_meta[mitglied.status].label }}".</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Reiter #}
+    {% set tabs = {'stammdaten': 'Stammdaten', 'mandate': 'Mandate', 'beitraege': 'Beiträge', 'email': 'E-Mail-Historie', 'historie': 'Änderungshistorie'} %}
+    <div class="zeile" style="gap:4px;border-bottom:1px solid var(--rahmen-leicht);margin-bottom:18px">
+        {% for schluessel, label in tabs %}
+            <a href="/mitglieder/{{ mitglied.id }}?tab={{ schluessel }}"
+               class="button button-klein {{ tab == schluessel ? '' : 'button-sekundaer' }}"
+               style="border-bottom-left-radius:0;border-bottom-right-radius:0">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    {% if tab == 'stammdaten' %}
+        <div class="karte" style="max-width:760px">
+            <div class="form-raster">
+                {{ ui.feld('Briefanrede', briefanrede) }}
+                {{ ui.feld('Adresszeile', mitglied.adresszeile_manuell) }}
+                {{ ui.feld('Vorname', mitglied.vorname) }}
+                {{ ui.feld('Nachname', mitglied.nachname) }}
+                {{ ui.feld('Straße', mitglied.strasse) }}
+                {{ ui.feld('PLZ / Ort', (mitglied.plz ~ ' ' ~ mitglied.ort)|trim) }}
+                {{ ui.feld('Land', laender[mitglied.land]|default(mitglied.land)) }}
+                {{ ui.feld('E-Mail', mitglied.kein_email_kontakt ? (mitglied.email ~ ' (kein E-Mail-Kontakt)')|trim : mitglied.email) }}
+                {{ ui.feld('Telefon', mitglied.telefon) }}
+                {{ ui.feld('Zahlweise', mitglied.zahlweise == 'lastschrift' ? 'Lastschrift' : 'Selbstzahler') }}
+            </div>
+            <div class="info-box" style="white-space:pre-line">{{ postanschrift|join("\n") }}</div>
+
+            <h3>Jahresbeitrag</h3>
+            <form method="post" action="/mitglieder/{{ mitglied.id }}/beitrag" class="zeile">
+                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                <input type="text" name="beitrag" value="{{ '%.2f'|format(mitglied.jahresbeitrag)|replace({'.': ','}) }}" style="max-width:140px">
+                <span>€</span>
+                <button class="button button-sekundaer">Beitrag ändern</button>
+            </form>
+            {% if mitglied.notizen %}<h3>Notizen</h3><p>{{ mitglied.notizen|nl2br }}</p>{% endif %}
+        </div>
+    {% elseif tab == 'mandate' %}
+        <div class="karte"><p class="text-center">SEPA-Mandate folgen in AP2.</p></div>
+    {% elseif tab == 'beitraege' %}
+        <div class="karte"><p class="text-center">Forderungen &amp; Sollstellung folgen in AP2.</p></div>
+    {% elseif tab == 'email' %}
+        <div class="tabelle-huelle">
+            <table class="daten">
+                <thead><tr><th>Zeitpunkt</th><th>Betreff</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for e in emails %}
+                        <tr>
+                            <td class="mono">{{ (e.gesendet_am ?? e.geplant_ab)|date('d.m.Y H:i') }}</td>
+                            <td>{{ e.betreff }}</td>
+                            <td><span class="badge {{ e.status == 'gesendet' ? 'badge-erfolg' : (e.status == 'fehler' ? 'badge-fehler' : 'badge-info') }}">{{ e.status }}</span></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3" class="text-center">Noch keine E-Mails.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elseif tab == 'historie' %}
+        {% for e in historie %}
+            <div class="karte eng">
+                <div class="zeile" style="justify-content:space-between">
+                    <div>
+                        <strong>Version {{ e.version_nr }}</strong>
+                        {% if e.ist_revert %}<span class="badge badge-info">Revert</span>{% endif %}
+                        <span class="feld-hinweis">{{ e.wann|date('d.m.Y H:i') }} · {{ e.wer }}</span>
+                    </div>
+                    <form method="post" action="/mitglieder/{{ mitglied.id }}/revert" style="margin:0"
+                          onsubmit="return confirm('Auf diesen Stand zurücksetzen? Es wird eine neue Version erstellt.')">
+                        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                        <input type="hidden" name="version_id" value="{{ e.version_id }}">
+                        <button class="button button-sekundaer button-klein">Auf diesen Stand zurücksetzen</button>
+                    </form>
+                </div>
+                <table class="daten" style="margin-top:8px">
+                    <thead><tr><th>Feld</th><th>alt</th><th>neu</th><th></th></tr></thead>
+                    <tbody>
+                        {% for d in e.diffs %}
+                            <tr>
+                                <td>{{ d.feld }}</td>
+                                <td>{{ d.alt }}</td>
+                                <td>{{ d.neu }}</td>
+                                <td>
+                                    <form method="post" action="/mitglieder/{{ mitglied.id }}/revert" style="margin:0">
+                                        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                        <input type="hidden" name="version_id" value="{{ e.version_id }}">
+                                        <input type="hidden" name="feld" value="{{ d.feld }}">
+                                        <button class="button button-sekundaer button-klein" title="Nur dieses Feld übernehmen">Feld übernehmen</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="karte"><p class="text-center">Noch keine Änderungen.</p></div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

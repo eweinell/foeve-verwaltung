@@ -22,7 +22,7 @@ final class TestDb
         ]);
         $pdo->exec('PRAGMA foreign_keys = ON');
 
-        foreach (self::schema() as $ddl) {
+        foreach (self::schemaStatements() as $ddl) {
             $pdo->exec($ddl);
         }
 
@@ -30,9 +30,11 @@ final class TestDb
     }
 
     /**
+     * Portables Schema (SQLite) — öffentlich, damit auch der Smoke-Test es nutzen kann.
+     *
      * @return array<int,string>
      */
-    private static function schema(): array
+    public static function schemaStatements(): array
     {
         return [
             'CREATE TABLE benutzer (
@@ -100,6 +102,53 @@ final class TestDb
                 geaendert_von INTEGER NULL,
                 geaendert_am TEXT NOT NULL,
                 ist_revert_von INTEGER NULL
+            )',
+            // Mitglieder & Anträge (AP1) — portabel zu migrations/002_mitglied.sql.
+            'CREATE TABLE mitglied (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mitgliedsnummer INTEGER NULL UNIQUE,
+                status TEXT NOT NULL DEFAULT "beantragt",
+                anrede TEXT NOT NULL DEFAULT "familie",
+                vorname TEXT NULL,
+                nachname TEXT NOT NULL,
+                briefanrede_manuell TEXT NULL,
+                adresszeile_manuell TEXT NULL,
+                strasse TEXT NULL,
+                plz TEXT NULL,
+                ort TEXT NULL,
+                land TEXT NOT NULL DEFAULT "DE",
+                email TEXT NULL,
+                kein_email_kontakt INTEGER NOT NULL DEFAULT 0,
+                telefon TEXT NULL,
+                jahresbeitrag TEXT NOT NULL DEFAULT "0.00",
+                zahlweise TEXT NOT NULL DEFAULT "lastschrift",
+                eintrittsdatum TEXT NULL,
+                austrittsdatum TEXT NULL,
+                kuendigung_am TEXT NULL,
+                wirksam_zum TEXT NULL,
+                bestaetigt_am TEXT NULL,
+                notizen TEXT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE TABLE mitglied_version (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mitglied_id INTEGER NOT NULL,
+                version_nr INTEGER NOT NULL,
+                snapshot TEXT NOT NULL,
+                geaenderte_felder TEXT NOT NULL,
+                geaendert_von INTEGER NULL,
+                geaendert_am TEXT NOT NULL,
+                ist_revert_von INTEGER NULL
+            )',
+            'CREATE TABLE antrag_rohdaten (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mitglied_id INTEGER NULL,
+                eingegangen_am TEXT NOT NULL,
+                ip_hash TEXT NULL,
+                payload TEXT NOT NULL,
+                bestaetigungs_token TEXT NOT NULL UNIQUE,
+                bestaetigt_am TEXT NULL
             )',
         ];
     }

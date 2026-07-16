@@ -92,6 +92,24 @@ return static function (array $settings): ContainerInterface {
             (bool) $settings['app']['debug'],
         ),
 
+        App\Service\Captcha::class => static fn (ContainerInterface $c) => new App\Service\Captcha(
+            (string) $settings['captcha']['sitekey'],
+            (string) $settings['captcha']['secret'],
+            $c->get(LoggerInterface::class),
+        ),
+
+        App\Service\AntragService::class => static fn (ContainerInterface $c) => new App\Service\AntragService(
+            $c->get(Db::class),
+            $c->get(App\Repository\MitgliedRepository::class),
+            $c->get(App\Repository\AntragRepository::class),
+            $c->get(Krypto::class),
+            $c->get(MailDienst::class),
+            $c->get(Versionierung::class),
+            $c->get(Audit::class),
+            (string) $settings['app']['url'],
+            (string) $settings['crypto']['key'],
+        ),
+
         // Controller mit Konfigurationsbedarf.
         App\Controller\EinstellungenController::class => static fn (ContainerInterface $c) => new App\Controller\EinstellungenController(
             $c->get(Ansicht::class),

@@ -38,7 +38,7 @@ final class Versionierung
     public function mitSnapshot(
         string $tabelle,
         int|string $id,
-        int $benutzerId,
+        ?int $benutzerId,
         callable $update,
         ?int $revertVon = null,
     ): array {
@@ -74,7 +74,7 @@ final class Versionierung
         string $tabelle,
         int|string $id,
         int $versionId,
-        int $benutzerId,
+        ?int $benutzerId,
         ?array $nurFelder = null,
     ): array {
         $this->pruefeBezeichner($tabelle);
@@ -128,7 +128,7 @@ final class Versionierung
         Db $db,
         string $tabelle,
         int|string $id,
-        int $benutzerId,
+        ?int $benutzerId,
         array $vorher,
         array $geaendert,
         ?int $revertVon,
