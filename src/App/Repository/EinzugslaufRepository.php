@@ -37,8 +37,8 @@ final class EinzugslaufRepository
         $jetzt = $this->jetzt();
         $this->db->ausfuehren(
             "INSERT INTO einzugslauf (bezeichnung, faelligkeitsdatum, status, erstellt_von, created_at, updated_at)
-             VALUES (:b, :f, 'entwurf', :von, :now, :now)",
-            ['b' => $bezeichnung, 'f' => $faelligkeit, 'von' => $benutzerId, 'now' => $jetzt],
+             VALUES (:b, :f, 'entwurf', :von, :created, :updated)",
+            ['b' => $bezeichnung, 'f' => $faelligkeit, 'von' => $benutzerId, 'created' => $jetzt, 'updated' => $jetzt],
         );
 
         return (int) $this->db->letzteId();

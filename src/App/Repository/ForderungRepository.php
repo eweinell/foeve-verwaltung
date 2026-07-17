@@ -66,15 +66,16 @@ final class ForderungRepository
         $this->db->ausfuehren(
             'INSERT INTO forderung
                 (mitglied_id, jahr, betrag, typ, status, beitrag_jahr, created_at, updated_at)
-             VALUES (:mid, :jahr, :betrag, :typ, :status, :bjahr, :now, :now)',
+             VALUES (:mid, :jahr, :betrag, :typ, :status, :bjahr, :created, :updated)',
             [
-                'mid'    => (int) $daten['mitglied_id'],
-                'jahr'   => $jahr,
-                'betrag' => $daten['betrag'],
-                'typ'    => $typ,
-                'status' => (string) ($daten['status'] ?? Forderungsstatus::OFFEN),
-                'bjahr'  => $typ === Forderungsstatus::TYP_BEITRAG ? $jahr : null,
-                'now'    => $jetzt,
+                'mid'     => (int) $daten['mitglied_id'],
+                'jahr'    => $jahr,
+                'betrag'  => $daten['betrag'],
+                'typ'     => $typ,
+                'status'  => (string) ($daten['status'] ?? Forderungsstatus::OFFEN),
+                'bjahr'   => $typ === Forderungsstatus::TYP_BEITRAG ? $jahr : null,
+                'created' => $jetzt,
+                'updated' => $jetzt,
             ],
         );
 

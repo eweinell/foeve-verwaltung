@@ -71,7 +71,7 @@ final class MandatRepository
                 (mitglied_id, lfd_nr, mandatsreferenz, iban_verschluesselt, bic, kontoinhaber,
                  erteilt_am, status, sequenz_genutzt, aktiv_mitglied, created_at, updated_at)
              VALUES
-                (:mid, :lfd, :ref, :iban, :bic, :inhaber, :erteilt, :status, :seq, :aktiv, :now, :now)',
+                (:mid, :lfd, :ref, :iban, :bic, :inhaber, :erteilt, :status, :seq, :aktiv, :created, :updated)',
             [
                 'mid'     => $mitgliedId,
                 'lfd'     => (int) $daten['lfd_nr'],
@@ -83,7 +83,8 @@ final class MandatRepository
                 'status'  => $status,
                 'seq'     => (int) ($daten['sequenz_genutzt'] ?? 0),
                 'aktiv'   => $status === Mandatsstatus::AKTIV ? $mitgliedId : null,
-                'now'     => $jetzt,
+                'created' => $jetzt,
+                'updated' => $jetzt,
             ],
         );
 

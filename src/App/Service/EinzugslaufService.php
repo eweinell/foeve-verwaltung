@@ -156,8 +156,8 @@ final class EinzugslaufService
         }
 
         $this->db->ausfuehren(
-            "UPDATE einzugslauf SET status = 'angekuendigt', angekuendigt_am = :now, anzahl_email = :e, anzahl_post = :p, updated_at = :now WHERE id = :id",
-            ['now' => $this->jetzt(), 'e' => $email, 'p' => $post, 'id' => $laufId],
+            "UPDATE einzugslauf SET status = 'angekuendigt', angekuendigt_am = :ang, anzahl_email = :e, anzahl_post = :p, updated_at = :upd WHERE id = :id",
+            ['ang' => $this->jetzt(), 'upd' => $this->jetzt(), 'e' => $email, 'p' => $post, 'id' => $laufId],
         );
         $this->audit->protokolliere($benutzerId, 'einzugslauf_angekuendigt', 'einzugslauf', $laufId, ['email' => $email, 'post' => $post]);
     }
@@ -228,8 +228,8 @@ final class EinzugslaufService
                 }
             }
             $db->ausfuehren(
-                "UPDATE einzugslauf SET status = 'exportiert', xml_erzeugt_am = :now, xml_pfad = :pfad, updated_at = :now WHERE id = :id",
-                ['now' => $this->jetzt(), 'pfad' => $pfad, 'id' => $laufId],
+                "UPDATE einzugslauf SET status = 'exportiert', xml_erzeugt_am = :erz, xml_pfad = :pfad, updated_at = :upd WHERE id = :id",
+                ['erz' => $this->jetzt(), 'upd' => $this->jetzt(), 'pfad' => $pfad, 'id' => $laufId],
             );
         });
 
@@ -250,8 +250,8 @@ final class EinzugslaufService
                 ['faellig' => $faellig, 'now' => $this->jetzt(), 'lauf' => $laufId],
             );
             $db->ausfuehren(
-                "UPDATE einzugslauf SET status = 'abgeschlossen', abgeschlossen_am = :now, updated_at = :now WHERE id = :id",
-                ['now' => $this->jetzt(), 'id' => $laufId],
+                "UPDATE einzugslauf SET status = 'abgeschlossen', abgeschlossen_am = :abg, updated_at = :upd WHERE id = :id",
+                ['abg' => $this->jetzt(), 'upd' => $this->jetzt(), 'id' => $laufId],
             );
         });
         $this->audit->protokolliere($benutzerId, 'einzugslauf_abgeschlossen', 'einzugslauf', $laufId);
