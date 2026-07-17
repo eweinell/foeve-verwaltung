@@ -108,6 +108,48 @@ final class MitgliedController
         return $this->ansicht->render($response, 'mitglied/detail.twig', $daten);
     }
 
+    public function neuFormular(Request $request, Response $response): Response
+    {
+        return $this->neuAnsicht($response, [
+            'anrede'        => 'familie',
+            'land'          => 'DE',
+            'zahlweise'     => 'lastschrift',
+            'jahresbeitrag' => $this->einstellungen->hole('beitrag_min', '12.00'),
+        ]);
+    }
+
+    /**
+     * Manuelle Anlage (Papierantrag, telefonische Meldung): legt das Mitglied im
+     * Status `beantragt` an. Aktiviert wird es danach über die reguläre
+     * Statusaktion — samt Nummernvergabe, Begrüßungsmail und Sollstellung.
+     */
+    public function neu(Request $request, Response $response): Response
+    {
+        $d = (array) $request->getParsedBody();
+
+        $fehler = $this->stammdatenFehler($d);
+        if ($fehler === null) {
+            $fehler = $this->beitragFehler((string) ($d['jahresbeitrag'] ?? ''));
+        }
+        if ($fehler !== null) {
+            $this->flash->fehler($fehler);
+
+            return $this->neuAnsicht($response, $d);
+        }
+
+        $felder = $this->stammdatenFelder($d);
+        $this->emailHinweis((int) $felder['kein_email_kontakt'], (string) ($felder['email'] ?? ''));
+
+        $id = $this->service->anlegen($felder, (string) $d['jahresbeitrag'], $this->benutzerId($request));
+
+        $this->flash->erfolg('Das Mitglied wurde als Antrag angelegt. Bitte prüfen und anschließend aktivieren.');
+        if ($felder['zahlweise'] === 'lastschrift') {
+            $this->flash->warnung('Zahlweise „Lastschrift": Bitte im Reiter „Mandate" ein SEPA-Mandat erfassen — ohne Mandat bleibt das Mitglied beim Einzug außen vor.');
+        }
+
+        return $this->zu($response, $id);
+    }
+
     public function bearbeitenFormular(Request $request, Response $response, array $args): Response
     {
         $mitglied = $this->laden((int) $args['id'], $request);
@@ -126,45 +168,13 @@ final class MitgliedController
         $mitglied = $this->laden((int) $args['id'], $request);
         $d = (array) $request->getParsedBody();
 
-        $nachname = trim((string) ($d['nachname'] ?? ''));
-        $land = strtoupper(trim((string) ($d['land'] ?? 'DE')));
-        $plz = trim((string) ($d['plz'] ?? ''));
-        $email = trim((string) ($d['email'] ?? ''));
-
-        if ($nachname === '') {
-            return $this->zurueckMitFehler($response, $args['id'], 'Der Nachname darf nicht leer sein.', '/bearbeiten');
-        }
-        if ($plz !== '' && !$this->validierung->plzGueltig($land, $plz)) {
-            return $this->zurueckMitFehler($response, $args['id'], 'Die PLZ passt nicht zum gewählten Land.', '/bearbeiten');
-        }
-        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->zurueckMitFehler($response, $args['id'], 'Die E-Mail-Adresse ist ungültig.', '/bearbeiten');
+        $fehler = $this->stammdatenFehler($d);
+        if ($fehler !== null) {
+            return $this->zurueckMitFehler($response, $args['id'], $fehler, '/bearbeiten');
         }
 
-        $keinEmail = isset($d['kein_email_kontakt']) ? 1 : 0;
-        // Warnhinweis bei widersprüchlicher E-Mail-Kennzeichnung.
-        if ($keinEmail === 1 && $email !== '') {
-            $this->flash->warnung('Hinweis: „kein E-Mail-Kontakt" ist gesetzt, obwohl eine E-Mail-Adresse hinterlegt ist.');
-        } elseif ($keinEmail === 0 && $email === '') {
-            $this->flash->warnung('Hinweis: Es ist keine E-Mail-Adresse hinterlegt — ggf. „kein E-Mail-Kontakt" setzen (Postversand).');
-        }
-
-        $felder = [
-            'anrede'              => in_array($d['anrede'] ?? '', self::ANREDEN, true) ? $d['anrede'] : $mitglied['anrede'],
-            'vorname'             => trim((string) ($d['vorname'] ?? '')) ?: null,
-            'nachname'            => $nachname,
-            'briefanrede_manuell' => trim((string) ($d['briefanrede_manuell'] ?? '')) ?: null,
-            'adresszeile_manuell' => trim((string) ($d['adresszeile_manuell'] ?? '')) ?: null,
-            'strasse'             => trim((string) ($d['strasse'] ?? '')) ?: null,
-            'plz'                 => $plz !== '' ? $this->validierung->plzNormalisieren($land, $plz) : null,
-            'ort'                 => trim((string) ($d['ort'] ?? '')) ?: null,
-            'land'                => Laender::bekannt($land) ? $land : 'DE',
-            'email'               => $email ?: null,
-            'telefon'             => trim((string) ($d['telefon'] ?? '')) ?: null,
-            'zahlweise'           => in_array($d['zahlweise'] ?? '', self::ZAHLWEISEN, true) ? $d['zahlweise'] : $mitglied['zahlweise'],
-            'notizen'             => trim((string) ($d['notizen'] ?? '')) ?: null,
-            'kein_email_kontakt'  => $keinEmail,
-        ];
+        $felder = $this->stammdatenFelder($d, $mitglied);
+        $this->emailHinweis((int) $felder['kein_email_kontakt'], (string) ($felder['email'] ?? ''));
 
         $this->service->stammdatenAendern((int) $mitglied['id'], $felder, $this->benutzerId($request));
         $this->flash->erfolg('Die Stammdaten wurden gespeichert.');
@@ -179,14 +189,9 @@ final class MitgliedController
         $roh = trim((string) ($body['beitrag'] ?? ''));
         $wert = (float) str_replace(',', '.', $roh);
 
-        $min = (float) $this->einstellungen->hole('beitrag_min', '12.00');
-        $max = (float) $this->einstellungen->hole('beitrag_max', '500.00');
-        if ($wert < $min || $wert > $max) {
-            return $this->zurueckMitFehler(
-                $response,
-                $args['id'],
-                sprintf('Der Jahresbeitrag muss zwischen %s und %s Euro liegen.', number_format($min, 2, ',', '.'), number_format($max, 2, ',', '.')),
-            );
+        $fehler = $this->beitragFehler($roh);
+        if ($fehler !== null) {
+            return $this->zurueckMitFehler($response, $args['id'], $fehler);
         }
 
         $this->service->beitragAendern((int) $mitglied['id'], (string) $wert, $this->benutzerId($request));
@@ -404,6 +409,109 @@ final class MitgliedController
         }
 
         return $this->zuTab($response, (int) $forderung['mitglied_id'], 'beitraege');
+    }
+
+    // ---- intern (Stammdaten-Formular) ------------------------------------
+
+    /**
+     * Rendert das Anlageformular mit den zuletzt eingegebenen Werten.
+     *
+     * @param array<string,mixed> $werte
+     */
+    private function neuAnsicht(Response $response, array $werte): Response
+    {
+        return $this->ansicht->render($response, 'mitglied/neu.twig', [
+            'aktuelle_seite' => 'mitglieder',
+            'werte'          => $werte,
+            'anreden'        => self::ANREDEN,
+            'zahlweisen'     => self::ZAHLWEISEN,
+            'laender'        => Laender::NAMEN,
+            'beitrag_min'    => $this->einstellungen->hole('beitrag_min', '12.00'),
+            'beitrag_max'    => $this->einstellungen->hole('beitrag_max', '500.00'),
+        ]);
+    }
+
+    /**
+     * Prüft die Stammdaten-Eingaben; liefert die erste Fehlermeldung oder null.
+     *
+     * @param array<string,mixed> $d
+     */
+    private function stammdatenFehler(array $d): ?string
+    {
+        $land = strtoupper(trim((string) ($d['land'] ?? 'DE')));
+        $plz = trim((string) ($d['plz'] ?? ''));
+        $email = trim((string) ($d['email'] ?? ''));
+
+        if (trim((string) ($d['nachname'] ?? '')) === '') {
+            return 'Der Nachname darf nicht leer sein.';
+        }
+        if ($plz !== '' && !$this->validierung->plzGueltig($land, $plz)) {
+            return 'Die PLZ passt nicht zum gewählten Land.';
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return 'Die E-Mail-Adresse ist ungültig.';
+        }
+
+        return null;
+    }
+
+    private function beitragFehler(string $roh): ?string
+    {
+        $wert = (float) str_replace(',', '.', trim($roh));
+        $min = (float) $this->einstellungen->hole('beitrag_min', '12.00');
+        $max = (float) $this->einstellungen->hole('beitrag_max', '500.00');
+
+        if ($wert < $min || $wert > $max) {
+            return sprintf(
+                'Der Jahresbeitrag muss zwischen %s und %s Euro liegen.',
+                number_format($min, 2, ',', '.'),
+                number_format($max, 2, ',', '.'),
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     * Baut die Stammdatenfelder aus dem Formular. Für Anrede und Zahlweise gilt bei
+     * ungültiger Eingabe der bisherige Wert ($bestehend) bzw. der Default der Anlage.
+     *
+     * @param array<string,mixed> $d
+     * @param array<string,mixed>|null $bestehend
+     * @return array<string,mixed>
+     */
+    private function stammdatenFelder(array $d, ?array $bestehend = null): array
+    {
+        $land = strtoupper(trim((string) ($d['land'] ?? 'DE')));
+        $plz = trim((string) ($d['plz'] ?? ''));
+        $email = trim((string) ($d['email'] ?? ''));
+
+        return [
+            'anrede'              => in_array($d['anrede'] ?? '', self::ANREDEN, true) ? $d['anrede'] : ($bestehend['anrede'] ?? 'familie'),
+            'vorname'             => trim((string) ($d['vorname'] ?? '')) ?: null,
+            'nachname'            => trim((string) ($d['nachname'] ?? '')),
+            'briefanrede_manuell' => trim((string) ($d['briefanrede_manuell'] ?? '')) ?: null,
+            'adresszeile_manuell' => trim((string) ($d['adresszeile_manuell'] ?? '')) ?: null,
+            'strasse'             => trim((string) ($d['strasse'] ?? '')) ?: null,
+            'plz'                 => $plz !== '' ? $this->validierung->plzNormalisieren($land, $plz) : null,
+            'ort'                 => trim((string) ($d['ort'] ?? '')) ?: null,
+            'land'                => Laender::bekannt($land) ? $land : 'DE',
+            'email'               => $email ?: null,
+            'telefon'             => trim((string) ($d['telefon'] ?? '')) ?: null,
+            'zahlweise'           => in_array($d['zahlweise'] ?? '', self::ZAHLWEISEN, true) ? $d['zahlweise'] : ($bestehend['zahlweise'] ?? 'lastschrift'),
+            'notizen'             => trim((string) ($d['notizen'] ?? '')) ?: null,
+            'kein_email_kontakt'  => isset($d['kein_email_kontakt']) ? 1 : 0,
+        ];
+    }
+
+    /** Warnhinweis bei widersprüchlicher E-Mail-Kennzeichnung. */
+    private function emailHinweis(int $keinEmail, string $email): void
+    {
+        if ($keinEmail === 1 && $email !== '') {
+            $this->flash->warnung('Hinweis: „kein E-Mail-Kontakt" ist gesetzt, obwohl eine E-Mail-Adresse hinterlegt ist.');
+        } elseif ($keinEmail === 0 && $email === '') {
+            $this->flash->warnung('Hinweis: Es ist keine E-Mail-Adresse hinterlegt — ggf. „kein E-Mail-Kontakt" setzen (Postversand).');
+        }
     }
 
     // ---- intern ----------------------------------------------------------

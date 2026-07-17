@@ -37,6 +37,12 @@ Antragsformular mit Double-Opt-In und Aktivierungs-Workflow.
 - Liste: Suche (Name, Nummer, Ort, E-Mail), Filter (Status, Zahlweise, Land,
   E-Mail ja/nein, Beitragshöhe), Pagination, Sortierung. (Export-Buttons kommen in AP5 —
   Filterlogik so bauen, dass AP5 sie wiederverwenden kann.)
+- **Manuelle Anlage** (`/mitglieder/neu`, nachträglich ergänzt): Papieranträge und
+  telefonische Meldungen. Legt ohne DOI direkt im Status `beantragt` an; aktiviert wird
+  regulär über die Statusaktion (Nummer, Begrüßungsmail, Sollstellung). Ein Mandat
+  entsteht dabei nicht automatisch (kein Antrag mit IBAN) — es wird im Reiter „Mandate"
+  erfasst (AP2). Bewusst kein freies Setzen des Status: der Lebenszyklus §3.1 bleibt der
+  einzige Weg.
 - Detailansicht mit Reitern: Stammdaten (bearbeiten), Mandate (Platzhalter bis AP2),
   Beiträge (Platzhalter bis AP2), E-Mail-Historie (Queue-Einträge des Mitglieds),
   Änderungshistorie.

@@ -1,0 +1,105 @@
+{% extends 'layout.twig' %}
+{% block titel %}Mitglied anlegen{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Mitglied anlegen</h1>
+            <p class="untertitel">Für Papieranträge und telefonische Meldungen. Der Antrag wird ohne
+                Bestätigungsmail direkt als „beantragt" erfasst — aktiviert wird er anschließend wie jeder
+                andere Antrag.</p>
+        </div>
+        <a href="/mitglieder" class="button button-sekundaer">Abbrechen</a>
+    </div>
+
+    <div class="karte" style="max-width:760px">
+        <form method="post" action="/mitglieder/neu">
+            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+            <div class="form-raster">
+                <div class="form-group">
+                    <label for="anrede">Anrede</label>
+                    <select id="anrede" name="anrede">
+                        {% for a in anreden %}
+                            <option value="{{ a }}" {{ werte.anrede == a ? 'selected' : '' }}>{{ a|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vorname">Vorname (bei Familien optional)</label>
+                    <input type="text" id="vorname" name="vorname" value="{{ werte.vorname }}">
+                </div>
+                <div class="form-group">
+                    <label for="nachname">Nachname</label>
+                    <input type="text" id="nachname" name="nachname" value="{{ werte.nachname }}" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="telefon">Telefon</label>
+                    <input type="tel" id="telefon" name="telefon" value="{{ werte.telefon }}">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="strasse">Straße und Hausnummer</label>
+                    <input type="text" id="strasse" name="strasse" value="{{ werte.strasse }}">
+                </div>
+                <div class="form-group">
+                    <label for="land">Land</label>
+                    <select id="land" name="land">
+                        {% for code, name in laender %}
+                            <option value="{{ code }}" {{ werte.land == code ? 'selected' : '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div class="adress-raster">
+                        <div>
+                            <label for="plz">PLZ</label>
+                            <input type="text" id="plz" name="plz" value="{{ werte.plz }}">
+                        </div>
+                        <div>
+                            <label for="ort">Ort</label>
+                            <input type="text" id="ort" name="ort" value="{{ werte.ort }}">
+                        </div>
+                    </div>
+                    <div class="feld-hinweis">DE: 5 Ziffern · BE: 4 Ziffern · NL: „1234 AB".</div>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-Mail</label>
+                    <input type="email" id="email" name="email" value="{{ werte.email }}">
+                </div>
+                <div class="form-group">
+                    <label for="jahresbeitrag">Jahresbeitrag (€)</label>
+                    <input type="text" id="jahresbeitrag" name="jahresbeitrag" value="{{ werte.jahresbeitrag }}" required>
+                    <div class="feld-hinweis">Zwischen {{ beitrag_min|replace({'.': ','}) }} und {{ beitrag_max|replace({'.': ','}) }} Euro.</div>
+                </div>
+                <div class="form-group">
+                    <label for="zahlweise">Zahlweise</label>
+                    <select id="zahlweise" name="zahlweise">
+                        <option value="lastschrift" {{ werte.zahlweise == 'lastschrift' ? 'selected' : '' }}>Lastschrift</option>
+                        <option value="selbstzahler" {{ werte.zahlweise == 'selbstzahler' ? 'selected' : '' }}>Selbstzahler</option>
+                    </select>
+                    <div class="feld-hinweis">Bei Lastschrift das Mandat nach dem Anlegen im Reiter „Mandate" erfassen.</div>
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="briefanrede_manuell">Briefanrede (manuell, optional)</label>
+                    <input type="text" id="briefanrede_manuell" name="briefanrede_manuell" value="{{ werte.briefanrede_manuell }}"
+                           placeholder="z. B. Sehr geehrte Frau Dr. Meier, sehr geehrter Herr Schulz">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="adresszeile_manuell">Adresszeile (manuell, optional)</label>
+                    <input type="text" id="adresszeile_manuell" name="adresszeile_manuell" value="{{ werte.adresszeile_manuell }}">
+                </div>
+                <div class="form-group spanne-2">
+                    <label for="notizen">Notizen</label>
+                    <textarea id="notizen" name="notizen">{{ werte.notizen }}</textarea>
+                </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="kein_email_kontakt" name="kein_email_kontakt" {{ werte.kein_email_kontakt ? 'checked' : '' }}>
+                <label for="kein_email_kontakt">Kein E-Mail-Kontakt (Postversand)</label>
+            </div>
+            <div class="info-box">Mitgliedsnummer und Eintrittsdatum werden erst bei der Aktivierung vergeben.</div>
+            <div class="zeile abstand-oben">
+                <button type="submit" class="button">Anlegen</button>
+                <a href="/mitglieder" class="button button-sekundaer">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

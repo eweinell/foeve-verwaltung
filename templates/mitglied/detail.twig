@@ -54,6 +54,11 @@
                         <button class="button button-gefahr">Kündigung speichern</button>
                     </form>
                 </details>
+                <form method="post" action="/mitglieder/{{ mitglied.id }}/austritt" style="margin:0"
+                      onsubmit="return confirm('Austritt sofort zum heutigen Tag vollziehen — ohne Kündigungsfrist und ohne Bestätigungsmail?')">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button button-sekundaer" title="Sofortiger Austritt ohne Kündigungsverfahren">Austritt sofort vollziehen</button>
+                </form>
             {% elseif mitglied.status == 'gekuendigt' %}
                 <form method="post" action="/mitglieder/{{ mitglied.id }}/kuendigung-widerrufen" style="margin:0">
                     <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">

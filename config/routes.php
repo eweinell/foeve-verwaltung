@@ -45,6 +45,8 @@ return static function (App $app): void {
 
         // Mitgliederverwaltung (F1) — admin und vorstand.
         $group->get('/mitglieder', [MitgliedController::class, 'liste']);
+        $group->get('/mitglieder/neu', [MitgliedController::class, 'neuFormular']);
+        $group->post('/mitglieder/neu', [MitgliedController::class, 'neu']);
         $group->get('/mitglieder/{id:[0-9]+}', [MitgliedController::class, 'detail']);
         $group->get('/mitglieder/{id:[0-9]+}/bearbeiten', [MitgliedController::class, 'bearbeitenFormular']);
         $group->post('/mitglieder/{id:[0-9]+}/bearbeiten', [MitgliedController::class, 'bearbeiten']);

@@ -40,6 +40,29 @@ final class MitgliedService
     }
 
     /**
+     * Legt ein Mitglied von Hand an (Papierantrag, telefonische Meldung): Status
+     * `beantragt`, ohne Double-Opt-In — die Daten hat der Vorstand selbst erfasst.
+     * Die Aktivierung läuft danach über den regulären Weg (aktivieren()).
+     *
+     * @param array<string,mixed> $felder  nur Whitelist-Felder (STAMMFELDER)
+     * @return int die neue Mitglieds-ID
+     */
+    public function anlegen(array $felder, string $jahresbeitrag, int $benutzerId): int
+    {
+        $daten = array_intersect_key($felder, array_flip(self::STAMMFELDER));
+        if (trim((string) ($daten['nachname'] ?? '')) === '') {
+            throw new \InvalidArgumentException('Ein Mitglied braucht mindestens einen Nachnamen.');
+        }
+        $daten['status'] = Mitgliedsstatus::BEANTRAGT;
+        $daten['jahresbeitrag'] = number_format((float) str_replace(',', '.', $jahresbeitrag), 2, '.', '');
+
+        $id = $this->mitglieder->anlegen($daten);
+        $this->audit->protokolliere($benutzerId, 'mitglied_angelegt', 'mitglied', $id, ['quelle' => 'manuell']);
+
+        return $id;
+    }
+
+    /**
      * Ändert Stammdaten (nur Whitelist-Felder) versioniert.
      *
      * @param array<string,mixed> $felder

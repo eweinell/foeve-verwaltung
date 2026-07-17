@@ -114,8 +114,9 @@ final class MitgliedRepository
     {
         $jetzt = $this->jetzt();
         $spalten = [
-            'status', 'anrede', 'vorname', 'nachname', 'strasse', 'plz', 'ort', 'land',
-            'email', 'kein_email_kontakt', 'telefon', 'jahresbeitrag', 'zahlweise', 'notizen',
+            'status', 'anrede', 'vorname', 'nachname', 'briefanrede_manuell', 'adresszeile_manuell',
+            'strasse', 'plz', 'ort', 'land', 'email', 'kein_email_kontakt', 'telefon',
+            'jahresbeitrag', 'zahlweise', 'notizen',
         ];
         $felder = [];
         $platzhalter = [];

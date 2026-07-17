@@ -6,7 +6,10 @@
             <h1>Mitglieder</h1>
             <p class="untertitel">{{ ergebnis.gesamt }} Datensätze{% if filter.status %} · Filter: {{ statusliste[filter.status] }}{% endif %}</p>
         </div>
-        <a href="/antrag" class="button button-sekundaer" target="_blank" rel="noopener">Antragsformular ansehen</a>
+        <div class="zeile">
+            <a href="/antrag" class="button button-sekundaer" target="_blank" rel="noopener">Antragsformular ansehen</a>
+            <a href="/mitglieder/neu" class="button">Mitglied anlegen</a>
+        </div>
     </div>
 
     <div class="karte eng">

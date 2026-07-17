@@ -68,6 +68,63 @@ final class MitgliedServiceTest extends TestCase
         ]);
     }
 
+    public function testAnlegenErzeugtBeantragtenAntragOhneNummer(): void
+    {
+        $id = $this->service->anlegen([
+            'anrede'    => 'herr',
+            'vorname'   => 'Jan',
+            'nachname'  => 'Papier',
+            'plz'       => '52134',
+            'ort'       => 'Herzogenrath',
+            'land'      => 'DE',
+            'zahlweise' => 'selbstzahler',
+        ], '30,00', 7);
+
+        $mitglied = $this->mitglieder->findePerId($id);
+        self::assertSame(Mitgliedsstatus::BEANTRAGT, $mitglied['status']);
+        self::assertNull($mitglied['mitgliedsnummer']);
+        self::assertNull($mitglied['eintrittsdatum']);
+        self::assertSame('30.00', $mitglied['jahresbeitrag']);
+        // Ohne DOI: kein Antrags-Rohdatensatz, keine Mail.
+        self::assertSame(0, (int) $this->db->einWert('SELECT COUNT(*) FROM email_queue WHERE mitglied_id = :id', ['id' => $id]));
+        self::assertSame(1, (int) $this->db->einWert("SELECT COUNT(*) FROM audit_log WHERE aktion = 'mitglied_angelegt'"));
+    }
+
+    public function testAnlegenUndAktivierenLaeuftUeberDenRegulaerenWeg(): void
+    {
+        $id = $this->service->anlegen(['anrede' => 'familie', 'nachname' => 'Papier', 'email' => 'papier@example.de'], '12.00', 7);
+
+        $nummer = $this->service->aktivieren($id, 7);
+
+        self::assertSame(2000, $nummer);
+        self::assertSame(Mitgliedsstatus::AKTIV, $this->db->einWert('SELECT status FROM mitglied WHERE id = :id', ['id' => $id]));
+        // Begrüßungsmail und Beitragsforderung wie beim Online-Antrag.
+        self::assertSame(1, (int) $this->db->einWert('SELECT COUNT(*) FROM email_queue WHERE mitglied_id = :id', ['id' => $id]));
+        self::assertSame(1, (int) $this->db->einWert('SELECT COUNT(*) FROM forderung WHERE mitglied_id = :id', ['id' => $id]));
+        // Ohne Antrag kein automatisches Mandat — das erfasst der Vorstand von Hand.
+        self::assertSame(0, (int) $this->db->einWert('SELECT COUNT(*) FROM mandat WHERE mitglied_id = :id', ['id' => $id]));
+    }
+
+    public function testAnlegenIgnoriertNichtErlaubteFelder(): void
+    {
+        $id = $this->service->anlegen([
+            'nachname'        => 'Schlau',
+            'anrede'          => 'frau',
+            'status'          => Mitgliedsstatus::AKTIV,
+            'mitgliedsnummer' => 4711,
+        ], '12.00', 7);
+
+        $mitglied = $this->mitglieder->findePerId($id);
+        self::assertSame(Mitgliedsstatus::BEANTRAGT, $mitglied['status']);
+        self::assertNull($mitglied['mitgliedsnummer']);
+    }
+
+    public function testAnlegenOhneNachnamenScheitert(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->anlegen(['anrede' => 'herr', 'vorname' => 'Nur'], '12.00', 7);
+    }
+
     public function testAktivierenVergibtNummernAb2000(): void
     {
         $a = $this->seedBeantragt('Alpha');
