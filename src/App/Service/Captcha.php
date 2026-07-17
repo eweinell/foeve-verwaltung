@@ -5,23 +5,35 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Psr\Log\LoggerInterface;
+use TrustComponent\TrustCaptcha\CaptchaManager;
 
 /**
- * TrustCaptcha-Bot-Schutz für die öffentliche Antragsseite (F2). Optional:
- * ohne konfiguriertes Secret ist die Prüfung deaktiviert (Entwicklung/Test).
+ * TrustCaptcha-Bot-Schutz für die öffentliche Antragsseite (F2), übernommen aus
+ * der bestehenden Anmelde-App (`foeve-signupphp/index.php`).
  *
- * Hinweis: Das genaue Verifikations-API-Kontrakt sollte gegen die bestehende
- * Anmelde-App (`foeve-signupphp`) bzw. die TrustCaptcha-Doku abgeglichen werden,
- * sobald verfügbar. Bei aktiver Konfiguration wird „fail closed" verfahren:
- * ist die Verifikation nicht möglich, gilt der Antrag als nicht bestätigt.
+ * Verifiziert wird über das offizielle SDK: der API-Endpunkt steckt im Token
+ * selbst, es gibt also keine feste Verify-URL. Ein Score über SCORE_GRENZE gilt
+ * als Bot — dieselbe Schwelle wie in der Altanwendung.
+ *
+ * Optional: ohne konfiguriertes Sitekey/Secret ist die Prüfung deaktiviert
+ * (Entwicklung/Test). Bei aktiver Konfiguration gilt „fail closed": ist die
+ * Verifikation nicht möglich, wird der Antrag abgewiesen.
  */
 final class Captcha
 {
+    /** Score über diesem Wert = Bot (Altanwendung: `$result->score > 0.6`). */
+    private const SCORE_GRENZE = 0.6;
+
+    /** Widget-Skript. Einzige erlaubte CDN-Einbindung (CLAUDE.md, KONZEPT §F2). */
+    public const SKRIPT_URL = 'https://cdn.trustcomponent.com/trustcaptcha/2.0.x/trustcaptcha.umd.min.js';
+
+    /** Name des Formularfelds, in das das Widget sein Token schreibt. */
+    public const TOKEN_FELD = 'tc-verification-token';
+
     public function __construct(
         private readonly string $siteKey,
         private readonly string $secret,
         private readonly LoggerInterface $logger,
-        private readonly string $verifyUrl = 'https://api.trustcaptcha.com/api/v1/verification/verifytoken',
     ) {
     }
 
@@ -33,6 +45,11 @@ final class Captcha
     public function siteKey(): string
     {
         return $this->siteKey;
+    }
+
+    public function skriptUrl(): string
+    {
+        return self::SKRIPT_URL;
     }
 
     /**
@@ -48,40 +65,14 @@ final class Captcha
         }
 
         try {
-            $antwort = $this->anfrage($token);
-            $daten = json_decode($antwort, true);
-
-            // TrustCaptcha liefert u. a. „success"/„verified" und einen Score.
-            $erfolg = ($daten['success'] ?? $daten['verified'] ?? false) === true;
-            $score = (float) ($daten['score'] ?? 0);
-
-            return $erfolg && $score < 0.5; // niedriger Score = menschlich
+            $ergebnis = CaptchaManager::getVerificationResult($this->secret, $token);
         } catch (\Throwable $e) {
             $this->logger->warning('Captcha-Verifikation fehlgeschlagen: {msg}', ['msg' => $e->getMessage()]);
 
             return false;
         }
-    }
 
-    private function anfrage(string $token): string
-    {
-        $payload = json_encode(['secretKey' => $this->secret, 'verificationToken' => $token]);
-        $ch = curl_init($this->verifyUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 8,
-        ]);
-        $antwort = curl_exec($ch);
-        $fehler = curl_error($ch);
-        curl_close($ch);
-
-        if ($antwort === false) {
-            throw new \RuntimeException($fehler !== '' ? $fehler : 'Keine Antwort vom Captcha-Dienst.');
-        }
-
-        return (string) $antwort;
+        return $ergebnis->verificationPassed === true
+            && (float) $ergebnis->score <= self::SCORE_GRENZE;
     }
 }

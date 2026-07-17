@@ -148,7 +148,9 @@ final class TestDb
                 ip_hash TEXT NULL,
                 payload TEXT NOT NULL,
                 bestaetigungs_token TEXT NOT NULL UNIQUE,
-                bestaetigt_am TEXT NULL
+                resend_token TEXT NULL UNIQUE,
+                bestaetigt_am TEXT NULL,
+                erneut_gesendet_am TEXT NULL
             )',
             // SEPA-Mandate & Sollstellung (AP2) — portabel zu migrations/003.
             'CREATE TABLE mandat (

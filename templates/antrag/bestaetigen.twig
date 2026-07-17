@@ -1,14 +1,15 @@
 {% extends 'layout.twig' %}
 {% block titel %}Antrag bestätigen{% endblock %}
-{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block container_klasse %}antrag-seite{% endblock %}
 {% block inhalt %}
-    <div class="karte text-center">
-        <img src="/img/logo.png" alt="" style="height:40px">
-        <h1 style="margin-top:12px">Antrag bestätigen</h1>
-        <p>Bitte bestätigen Sie mit einem Klick auf den Button, dass Sie diesen Aufnahmeantrag
-            gestellt haben und dem SEPA-Lastschriftmandat zustimmen.</p>
-
+    <div class="text-center">
         {% if token %}
+            <div class="waiting-icon">📧</div>
+            <h1>Nur noch ein Klick!</h1>
+            <p>Bitte bestätigen Sie Ihre E-Mail-Adresse und Ihren Antrag, um Ihre Mitgliedschaft beim
+                Förderverein des Städtischen Gymnasiums Herzogenrath abzuschließen. Mit der Bestätigung
+                stimmen Sie zugleich dem SEPA-Lastschriftmandat zu.</p>
+
             {# Bewusst per POST — ein automatischer GET-Abruf (Mail-Scanner) bestätigt NICHT. #}
             <form method="post" action="/antrag/bestaetigen" class="abstand-oben">
                 <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
@@ -16,7 +17,10 @@
                 <button type="submit" class="button button-voll">Jetzt bestätigen</button>
             </form>
         {% else %}
+            <div class="icon error">✗</div>
+            <h1>Link unvollständig</h1>
             <div class="alert alert-error">Der Bestätigungslink ist unvollständig.</div>
+            <p>Bitte öffnen Sie den Link aus unserer E-Mail noch einmal vollständig.</p>
         {% endif %}
     </div>
 {% endblock %}

@@ -154,13 +154,14 @@ final class MitgliedServiceTest extends TestCase
         $id = $this->mitglieder->anlegen(['status' => Mitgliedsstatus::UNBESTAETIGT, 'nachname' => 'Alt', 'anrede' => 'herr']);
         $alt = (new \DateTimeImmutable('-40 days'))->format('Y-m-d H:i:s');
         $this->db->ausfuehren('UPDATE mitglied SET created_at = :c WHERE id = :id', ['c' => $alt, 'id' => $id]);
-        $antragId = (new AntragRepository($this->db))->anlegen($id, ['x' => 1], null, 'tok-' . $id);
+        $antragId = (new AntragRepository($this->db))->anlegen($id, ['x' => 1], null, 'tok-' . $id, 'ref-' . $id);
 
         $anzahl = $this->service->verwerfeUnbestaetigte(30);
 
         self::assertSame(1, $anzahl);
         self::assertSame(Mitgliedsstatus::VERWORFEN, $this->db->einWert('SELECT status FROM mitglied WHERE id = :id', ['id' => $id]));
-        // Token entwertet.
+        // Beide Tokens entwertet — auch die Warteseite des verworfenen Antrags.
         self::assertNull((new AntragRepository($this->db))->findePerToken('tok-' . $id));
+        self::assertNull((new AntragRepository($this->db))->findePerResendToken('ref-' . $id));
     }
 }

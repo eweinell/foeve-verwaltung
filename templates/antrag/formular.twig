@@ -1,118 +1,226 @@
 {% extends 'layout.twig' %}
 {% block titel %}Mitglied werden{% endblock %}
+{% block container_klasse %}antrag-seite{% endblock %}
 {% block inhalt %}
-    <div class="seitenkopf" style="justify-content:center">
-        <div class="text-center">
-            <img src="/img/logo.png" alt="" style="height:44px">
-            <h1 style="margin-top:12px">Aufnahmeantrag</h1>
-            <p class="untertitel">Förderverein Gymnasium Herzogenrath e.V.</p>
+    <div class="text-center">
+        <img src="/img/logo.png" alt="{{ verein_name }}" class="antrag-logo">
+    </div>
+    <h1>Antrag auf Mitgliedschaft</h1>
+
+    <div class="intro-pitch">
+        <p>
+            Seit 1976 ermöglicht unser Förderverein das, was im regulären Schulbudget
+            oft zu kurz kommt: <strong>Schulgestaltung und neues Mobiliar, Austausch
+            mit unseren Partnerschulen, Projekte zur politischen Bildung, Schülerwettbewerbe,
+            moderne Medientechnik und Sportausrüstung</strong> &ndash; und ganz wichtig:
+            die Unterstützung von Schülerinnen und Schülern bei Klassenfahrten, wenn es
+            mal finanziell eng wird.
+        </p>
+
+        <div class="info-box">
+            <p>
+                Mit dieser Beitrittserklärung werden Sie Mitglied im {{ verein_name }}
+                und unterstützen damit die schulische Arbeit durch Ihre jährlichen Beiträge.
+            </p>
+            <p><strong>Hinweise zur Mitgliedschaft:</strong></p>
+            <ul>
+                <li>Die Mitgliedschaft beginnt mit dem in der Bestätigungsmail genannten Datum</li>
+                <li>Sie ist unbefristet und kann jederzeit zum 31. Dezember gekündigt werden</li>
+                <li>Der Jahresbeitrag wird per SEPA-Lastschrift eingezogen (im Frühjahr, bei späterem Beitritt im Herbst)</li>
+                <li>Der Jahresbeitrag fällt für jedes angebrochene Kalenderjahr in voller Höhe an</li>
+                <li>Ihre Beiträge sind steuerlich absetzbar &ndash; bis 300 € jährlich genügt der Kontoauszug als Nachweis</li>
+                <li>Bei Fragen erreichen Sie den Vorstand per E-Mail:
+                    <a href="mailto:foerderverein@gymnasium.herzogenrath.de">foerderverein@gymnasium.herzogenrath.de</a></li>
+            </ul>
         </div>
     </div>
 
-    <div class="karte" style="max-width:720px;margin:0 auto">
-        <form method="post" action="/antrag" id="antragsformular">
-            <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+    <a href="#antragsformular" class="cta-button smooth-scroll" id="topCTA">Jetzt Mitglied werden</a>
 
-            <h2 style="margin-top:0">Ihre Angaben</h2>
-            <div class="form-raster">
-                <div class="form-group">
-                    <label for="anrede">Anrede</label>
-                    <select id="anrede" name="anrede">
-                        <option value="herr" {{ alt.anrede == 'herr' ? 'selected' : '' }}>Herr</option>
-                        <option value="frau" {{ alt.anrede == 'frau' ? 'selected' : '' }}>Frau</option>
-                        <option value="familie" {{ alt.anrede == 'familie' ? 'selected' : '' }}>Familie</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="vorname">Vorname <span class="feld-hinweis">(bei Familien optional)</span></label>
-                    <input type="text" id="vorname" name="vorname" value="{{ alt.vorname }}">
-                </div>
-                <div class="form-group">
-                    <label for="nachname">Nachname</label>
-                    <input type="text" id="nachname" name="nachname" value="{{ alt.nachname }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="telefon">Telefon <span class="feld-hinweis">(optional)</span></label>
-                    <input type="tel" id="telefon" name="telefon" value="{{ alt.telefon }}">
-                </div>
-                <div class="form-group spanne-2">
-                    <label for="strasse">Straße und Hausnummer</label>
-                    <input type="text" id="strasse" name="strasse" value="{{ alt.strasse }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="land">Land</label>
-                    <select id="land" name="land">
-                        {% for code, name in laender %}
-                            <option value="{{ code }}" {{ (alt.land ?? 'DE') == code ? 'selected' : '' }}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <div class="adress-raster">
-                        <div>
-                            <label for="plz">PLZ</label>
-                            <input type="text" id="plz" name="plz" value="{{ alt.plz }}" required>
-                        </div>
-                        <div>
-                            <label for="ort">Ort</label>
-                            <input type="text" id="ort" name="ort" value="{{ alt.ort }}" required>
-                        </div>
-                    </div>
-                    <div class="feld-hinweis">DE: 5 Ziffern · BE: 4 Ziffern · NL: „1234 AB".</div>
-                </div>
-                <div class="form-group spanne-2">
-                    <label for="email">E-Mail</label>
-                    <input type="email" id="email" name="email" value="{{ alt.email }}" required>
-                </div>
+    <form method="post" action="/antrag" id="antragsformular" novalidate>
+        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+
+        <div class="form-group">
+            <label for="anrede">Anrede *</label>
+            <select id="anrede" name="anrede" required>
+                <option value="">Bitte wählen</option>
+                <option value="herr"    {{ alt.anrede == 'herr'    ? 'selected' : '' }}>Herr</option>
+                <option value="frau"    {{ alt.anrede == 'frau'    ? 'selected' : '' }}>Frau</option>
+                <option value="familie" {{ alt.anrede == 'familie' ? 'selected' : '' }}>Familie</option>
+            </select>
+            <div class="error-message" id="anrede-error">Bitte wählen Sie eine Anrede.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="vorname">Vorname</label>
+            <input type="text" id="vorname" name="vorname" autocomplete="given-name" value="{{ alt.vorname }}">
+        </div>
+
+        <div class="form-group">
+            <label for="nachname">Nachname *</label>
+            <input type="text" id="nachname" name="nachname" autocomplete="family-name" required value="{{ alt.nachname }}">
+            <div class="error-message" id="nachname-error">Bitte geben Sie den Nachnamen ein.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="strasse">Straße und Hausnummer *</label>
+            <input type="text" id="strasse" name="strasse" autocomplete="address-line1" required value="{{ alt.strasse }}">
+            <div class="error-message" id="strasse-error">Bitte geben Sie Ihre Adresse ein.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="land">Land *</label>
+            <select id="land" name="land" required>
+                {% for code, name in laender %}
+                    <option value="{{ code }}" {{ (alt.land|default('DE')) == code ? 'selected' : '' }}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group address-row">
+            <div>
+                <label for="plz">PLZ *</label>
+                <input type="text" id="plz" name="plz" autocomplete="postal-code" required value="{{ alt.plz }}">
+                <div class="error-message" id="plz-error">Ungültige PLZ.</div>
             </div>
+            <div>
+                <label for="ort">Ort *</label>
+                <input type="text" id="ort" name="ort" autocomplete="address-level2" required value="{{ alt.ort }}">
+                <div class="error-message" id="ort-error">Bitte geben Sie den Ort ein.</div>
+            </div>
+        </div>
+        <div class="feld-hinweis">Deutschland: 5 Ziffern · Belgien: 4 Ziffern · Niederlande: „1234 AB".</div>
 
-            <h2>Jahresbeitrag</h2>
-            <div class="stapel">
+        <div class="form-group">
+            <label for="email">E-Mail-Adresse *</label>
+            <input type="email" id="email" name="email" autocomplete="email" required value="{{ alt.email }}">
+            <div class="error-message" id="email-error">Bitte geben Sie eine gültige E-Mail-Adresse ein.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="iban">IBAN *</label>
+            <input type="text" id="iban" name="iban" autocomplete="off" spellcheck="false"
+                   autocapitalize="characters" required value="{{ alt.iban }}">
+            <div class="error-message" id="iban-error">Bitte geben Sie eine gültige IBAN ein (z. B. DE89, NL91, BE71).</div>
+            <div class="feld-hinweis">IBANs aus dem gesamten SEPA-Raum werden akzeptiert.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="kontoinhaber">Kontoinhaber <small>(falls abweichend)</small></label>
+            <input type="text" id="kontoinhaber" name="kontoinhaber" autocomplete="name" value="{{ alt.kontoinhaber }}">
+            <div class="error-message" id="kontoinhaber-error">Bitte geben Sie den Kontoinhaber an, da kein Vorname angegeben wurde.</div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>SEPA-Lastschriftmandat für wiederkehrende Zahlungen</strong></p>
+            <p>
+                <strong>Zahlungsempfänger:</strong> {{ verein_name }}<br>
+                {% if glaeubiger_id %}
+                    <strong>Gläubiger-Identifikationsnummer:</strong> {{ glaeubiger_id }}<br>
+                {% endif %}
+                <strong>Mandatsreferenz:</strong> Wird Ihnen nach Bestätigung der Mitgliedschaft mitgeteilt
+            </p>
+            <p><strong>Wichtige Hinweise zum SEPA-Lastschriftmandat:</strong></p>
+            <ul>
+                <li>Das Mandat gilt für wiederkehrende <strong>jährliche Zahlungen</strong> während der gesamten Dauer Ihrer Vereinsmitgliedschaft</li>
+                <li>Der Mitgliedsbeitrag wird einmal jährlich eingezogen (im Frühjahr, bei späterem Beitritt im Herbst)</li>
+                <li>Sie werden mindestens <strong>14 Kalendertage vor jedem Einzug</strong> per E-Mail über den genauen Abbuchungstermin und Betrag informiert (Pre-Notification)</li>
+                <li>Sie können innerhalb von <strong>8 Wochen</strong> ab Belastungsdatum die Erstattung der Lastschrift bei Ihrem Kreditinstitut verlangen</li>
+                <li>Das Mandat kann jederzeit durch schriftliche Mitteilung an den Verein widerrufen werden</li>
+                <li>Bei Beendigung der Mitgliedschaft erlischt das Mandat automatisch</li>
+                <li>Es gelten die mit Ihrem Kreditinstitut vereinbarten Bedingungen</li>
+            </ul>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="mandat" name="mandat" required {{ alt.mandat ? 'checked' : '' }}>
+            <label for="mandat">
+                <strong>Ich erteile dem {{ verein_name }}{% if glaeubiger_id %} (Gläubiger-ID: {{ glaeubiger_id }}){% endif %}
+                ein SEPA-Lastschriftmandat für wiederkehrende jährliche Zahlungen</strong> von dem oben angegebenen
+                Konto. Ich weise mein Kreditinstitut an, die vom Zahlungsempfänger auf mein Konto gezogenen
+                Lastschriften einzulösen. Das Mandat gilt für die Dauer meiner Vereinsmitgliedschaft.
+            </label>
+        </div>
+        <div class="error-message" id="mandat-error">Bitte erteilen Sie das SEPA-Lastschriftmandat.</div>
+
+        <div class="form-group">
+            <label>Mitgliedsbeitrag (jährlich) *</label>
+            <div class="beitrag-options">
                 {% for s in stufen %}
                     <label class="radio-option">
-                        <input type="radio" name="jahresbeitrag" value="{{ s.wert }}" {{ alt.jahresbeitrag == s.wert ? 'checked' : '' }}>
-                        {{ s.label }}
+                        <input type="radio" name="jahresbeitrag" value="{{ s.wert }}"
+                               {{ (alt.jahresbeitrag|default('30.00')) == s.wert ? 'checked' : '' }}>
+                        <span>
+                            {{ s.label }}
+                            {% if s.empfohlen %}
+                                <small class="stufe-hinweis">⭐ Durchschnittsbeitrag unserer Mitglieder</small>
+                            {% endif %}
+                        </span>
                     </label>
                 {% endfor %}
                 <label class="radio-option">
-                    <input type="radio" name="jahresbeitrag" value="wunsch" {{ alt.jahresbeitrag == 'wunsch' ? 'checked' : '' }}>
-                    Wunschbetrag
-                    <input type="text" name="jahresbeitrag_wunsch" value="{{ alt.jahresbeitrag_wunsch }}"
-                           placeholder="z. B. 45,00" style="max-width:140px;margin-left:12px"> €
+                    <input type="radio" name="jahresbeitrag" value="wunsch" id="beitrag_wunsch_radio"
+                           {{ alt.jahresbeitrag == 'wunsch' ? 'checked' : '' }}>
+                    <span>Wunschbetrag</span>
                 </label>
-                <div class="feld-hinweis">Mindestens {{ beitrag_min|replace({'.': ','}) }} €, höchstens {{ beitrag_max|replace({'.': ','}) }} € pro Jahr.</div>
             </div>
-
-            <h2>SEPA-Lastschriftmandat</h2>
-            <div class="form-raster">
-                <div class="form-group spanne-2">
-                    <label for="iban">IBAN</label>
-                    <input type="text" id="iban" name="iban" value="{{ alt.iban }}" placeholder="DE.. / BE.. / NL.." required>
-                    <div class="feld-hinweis">IBANs aus dem gesamten SEPA-Raum werden akzeptiert.</div>
-                </div>
-                <div class="form-group spanne-2">
-                    <label for="kontoinhaber">Kontoinhaber <span class="feld-hinweis">(falls abweichend)</span></label>
-                    <input type="text" id="kontoinhaber" name="kontoinhaber" value="{{ alt.kontoinhaber }}">
+            <div id="wunsch_container" hidden>
+                <input type="number" id="jahresbeitrag_wunsch" name="jahresbeitrag_wunsch"
+                       min="{{ beitrag_min }}" max="{{ beitrag_max }}" step="1"
+                       placeholder="Ihr Wunschbetrag ab {{ beitrag_min|replace({'.': ','}) }} € jährlich"
+                       value="{{ alt.jahresbeitrag_wunsch }}">
+                <div class="error-message" id="beitrag-error">
+                    Bitte geben Sie einen Betrag zwischen {{ beitrag_min|replace({'.': ','}) }} €
+                    und {{ beitrag_max|replace({'.': ','}) }} € ein.
                 </div>
             </div>
-            <div class="info-box">
-                Mit dem Absenden ermächtigen Sie den Förderverein, den Mitgliedsbeitrag per SEPA-Lastschrift
-                einzuziehen. Den vollständigen Mandatstext erhalten Sie in der Bestätigungs-E-Mail.
-            </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="mandat" name="mandat" {{ alt.mandat ? 'checked' : '' }} required>
-                <label for="mandat">Ich stimme dem SEPA-Lastschriftmandat zu.</label>
-            </div>
+        </div>
 
-            {% if captcha_aktiv %}
-                {# TrustCaptcha — CDN nur auf dieser öffentlichen Seite erlaubt (CSP-Ausnahme). #}
-                <trustcaptcha-component sitekey="{{ captcha_key }}"></trustcaptcha-component>
-                <script src="https://cdn.trustcaptcha.com/widget/v1/trustcaptcha.js" defer></script>
-            {% endif %}
+        <div class="checkbox-group">
+            <input type="checkbox" id="datenschutz" name="datenschutz" required {{ alt.datenschutz ? 'checked' : '' }}>
+            <label for="datenschutz">
+                Ich habe die <a href="/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>
+                gelesen und stimme der Verarbeitung meiner Daten zu.
+            </label>
+        </div>
+        <div class="error-message" id="datenschutz-error">Bitte stimmen Sie der Datenschutzerklärung zu.</div>
 
-            <div class="abstand-oben">
-                <button type="submit" class="button button-voll">Antrag absenden</button>
+        {% if captcha_aktiv %}
+            {# TrustCaptcha — einzige erlaubte CDN-Einbindung (CLAUDE.md, KONZEPT §F2). #}
+            <div class="form-group">
+                <trustcaptcha-component
+                    id="trustcaptchaComponent"
+                    sitekey="{{ captcha_key }}"
+                    language="de"
+                    theme="light"></trustcaptcha-component>
             </div>
-        </form>
+            <script src="{{ captcha_skript }}"></script>
+            <button type="submit" class="button button-voll" id="submitBtn" disabled aria-disabled="true">
+                Registrierung abschließen
+            </button>
+            <div class="error-message show" id="captcha-hint" style="color: var(--text-schwach)">
+                Bitte schließen Sie zuerst die Sicherheitsprüfung oben ab, um die Registrierung abschicken zu können.
+            </div>
+        {% else %}
+            <button type="submit" class="button button-voll" id="submitBtn">Registrierung abschließen</button>
+        {% endif %}
+
+        <div class="info-box">
+            Nach dem Absenden erhalten Sie eine E-Mail zur Bestätigung Ihrer Registrierung.
+            Bitte bestätigen Sie diese, um Ihren Mitgliedschaftsantrag abzuschließen.
+            Sie erhalten im Anschluss eine persönliche Willkommensnachricht des Vereinsvorstands.
+        </div>
+    </form>
+
+    <div class="footer footer-content">
+        <a class="link" href="https://www.gymnasium-herzogenrath.de/foerderverein">Homepage</a> |
+        <a class="link" href="/datenschutz.html">Datenschutz</a> |
+        <a class="link" href="/impressum.html">Impressum</a>
     </div>
+
+    <a href="#antragsformular" class="cta-button cta-button-floating smooth-scroll" id="floatingCTA">
+        Jetzt Mitglied werden
+    </a>
+
+    <script src="/js/antrag.js" defer></script>
 {% endblock %}

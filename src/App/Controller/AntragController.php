@@ -40,9 +40,12 @@ final class AntragController
             'laender'       => $this->laenderReihenfolge(),
             'captcha_aktiv' => $this->captcha->aktiv(),
             'captcha_key'   => $this->captcha->siteKey(),
+            'captcha_skript' => $this->captcha->skriptUrl(),
             'alt'           => $eingabe,
             'beitrag_min'   => $this->einstellungen->hole('beitrag_min', '12.00'),
             'beitrag_max'   => $this->einstellungen->hole('beitrag_max', '500.00'),
+            'verein_name'   => $this->antrag->vereinName(),
+            'glaeubiger_id' => $this->antrag->glaeubigerId(),
         ]);
     }
 
@@ -58,10 +61,10 @@ final class AntragController
             return $this->formular($request, $response, $d);
         }
 
-        // Bot-Schutz (optional).
-        $captchaToken = (string) ($d['tc-token'] ?? $d['captcha_token'] ?? '');
+        // Bot-Schutz (optional). Feldname wie in der Anmelde-App.
+        $captchaToken = (string) ($d[Captcha::TOKEN_FELD] ?? '');
         if (!$this->captcha->pruefe($captchaToken !== '' ? $captchaToken : null)) {
-            $this->flash->fehler('Der Bot-Schutz konnte nicht bestätigt werden. Bitte laden Sie die Seite neu.');
+            $this->flash->fehler('Die Sicherheitsprüfung ist fehlgeschlagen. Bitte laden Sie die Seite neu und versuchen Sie es erneut.');
 
             return $this->formular($request, $response, $d);
         }
@@ -73,29 +76,41 @@ final class AntragController
             return $this->formular($request, $response, $d);
         }
 
-        $token = $this->antrag->einreichen($eingabe, $ipHash);
+        $resendToken = $this->antrag->einreichen($eingabe, $ipHash);
 
-        return $response->withHeader('Location', '/antrag/warten?token=' . $token)->withStatus(302);
+        return $response->withHeader('Location', '/antrag/warten?ref=' . urlencode($resendToken))->withStatus(302);
     }
 
+    /**
+     * Warteseite. Angesteuert über das Resend-Token — das Bestätigungstoken
+     * steht ausschließlich in der DOI-Mail und nie in einer URL im Browser.
+     */
     public function warten(Request $request, Response $response): Response
     {
-        $token = (string) ($request->getQueryParams()['token'] ?? '');
+        $ref = (string) ($request->getQueryParams()['ref'] ?? '');
+        $status = $this->antrag->warteStatus($ref);
 
-        return $this->ansicht->render($response, 'antrag/warten.twig', ['token' => $token]);
+        return $this->ansicht->render($response, 'antrag/warten.twig', [
+            'ref'             => $ref,
+            'zustand'         => $status['zustand'],
+            'wartet_sekunden' => $status['wartet_sekunden'],
+            'sperre'          => AntragService::RESEND_SPERRE_SEKUNDEN,
+        ]);
     }
 
     public function erneutSenden(Request $request, Response $response): Response
     {
         $body = (array) $request->getParsedBody();
-        $token = (string) ($body['token'] ?? '');
-        if ($this->antrag->erneutSenden($token)) {
-            $this->flash->erfolg('Wir haben Ihnen die Bestätigungs-E-Mail erneut geschickt.');
-        } else {
-            $this->flash->info('Es konnte keine E-Mail versendet werden (evtl. bereits bestätigt).');
-        }
+        $ref = (string) ($body['ref'] ?? '');
 
-        return $response->withHeader('Location', '/antrag/warten?token=' . urlencode($token))->withStatus(302);
+        match ($this->antrag->erneutSenden($ref)) {
+            'ok'       => $this->flash->erfolg('Wir haben Ihnen die Bestätigungs-E-Mail erneut geschickt. Bitte prüfen Sie Ihr Postfach.'),
+            'gesperrt' => $this->flash->fehler('Bitte warten Sie einen Moment, bevor Sie die E-Mail erneut anfordern.'),
+            'schon'    => $this->flash->info('Ihre E-Mail-Adresse wurde bereits bestätigt. Sie müssen nichts weiter tun.'),
+            default    => $this->flash->fehler('Ungültige Anfrage.'),
+        };
+
+        return $response->withHeader('Location', '/antrag/warten?ref=' . urlencode($ref))->withStatus(302);
     }
 
     /**
@@ -136,9 +151,10 @@ final class AntragController
         $plz = trim((string) ($d['plz'] ?? ''));
         $ort = trim((string) ($d['ort'] ?? ''));
         $email = trim((string) ($d['email'] ?? ''));
-        $telefon = trim((string) ($d['telefon'] ?? ''));
         $iban = $this->validierung->ibanNormalisieren((string) ($d['iban'] ?? ''));
+        $kontoinhaber = trim((string) ($d['kontoinhaber'] ?? ''));
         $mandat = isset($d['mandat']);
+        $datenschutz = isset($d['datenschutz']);
 
         $beitragRoh = (string) ($d['jahresbeitrag'] ?? ($d['jahresbeitrag_wunsch'] ?? ''));
         if (($d['jahresbeitrag'] ?? '') === 'wunsch') {
@@ -151,11 +167,13 @@ final class AntragController
         if (!in_array($anrede, ['herr', 'frau', 'familie'], true)) {
             return [[], 'Bitte wählen Sie eine Anrede.'];
         }
-        if ($anrede !== 'familie' && $vorname === '') {
-            return [[], 'Bitte geben Sie Ihren Vornamen an.'];
-        }
         if ($nachname === '' || $strasse === '' || $ort === '') {
             return [[], 'Bitte füllen Sie Name und Adresse vollständig aus.'];
+        }
+        // Regel der Anmelde-App: ohne Vorname (z. B. „Familie Müller") braucht das
+        // Mandat einen ausgeschriebenen Kontoinhaber.
+        if ($vorname === '' && $kontoinhaber === '') {
+            return [[], 'Bitte geben Sie entweder einen Vornamen oder einen abweichenden Kontoinhaber an.'];
         }
         if (!Laender::bekannt($land)) {
             return [[], 'Bitte wählen Sie ein gültiges Land.'];
@@ -172,8 +190,11 @@ final class AntragController
         if ($beitrag < $min || $beitrag > $max) {
             return [[], sprintf('Der Jahresbeitrag muss zwischen %s und %s Euro liegen.', number_format($min, 2, ',', '.'), number_format($max, 2, ',', '.'))];
         }
+        if (!$datenschutz) {
+            return [[], 'Bitte stimmen Sie der Datenschutzerklärung zu.'];
+        }
         if (!$mandat) {
-            return [[], 'Bitte stimmen Sie dem SEPA-Lastschriftmandat zu.'];
+            return [[], 'Bitte erteilen Sie das SEPA-Lastschriftmandat.'];
         }
 
         $eingabe = [
@@ -185,17 +206,19 @@ final class AntragController
             'ort'           => $ort,
             'land'          => $land,
             'email'         => $email,
-            'telefon'       => $telefon,
             'jahresbeitrag' => number_format($beitrag, 2, '.', ''),
             'iban'          => $iban,
-            'kontoinhaber'  => trim((string) ($d['kontoinhaber'] ?? '')) ?: trim($vorname . ' ' . $nachname),
+            'kontoinhaber'  => $kontoinhaber ?: trim($vorname . ' ' . $nachname),
         ];
 
         return [$eingabe, null];
     }
 
+    /** Beitragsstufe, die in der Anmelde-App als Durchschnittsbeitrag markiert und vorausgewählt war. */
+    private const STUFE_EMPFOHLEN = '30.00';
+
     /**
-     * @return array<int,array{wert:string,label:string}>
+     * @return array<int,array{wert:string,label:string,empfohlen:bool}>
      */
     private function stufen(): array
     {
@@ -203,7 +226,12 @@ final class AntragController
         $stufen = [];
         foreach (array_filter(array_map('trim', explode(',', $roh))) as $s) {
             if (is_numeric($s)) {
-                $stufen[] = ['wert' => number_format((float) $s, 2, '.', ''), 'label' => number_format((float) $s, 0, ',', '.') . ' €'];
+                $wert = number_format((float) $s, 2, '.', '');
+                $stufen[] = [
+                    'wert'      => $wert,
+                    'label'     => number_format((float) $s, 0, ',', '.') . ' € / Jahr',
+                    'empfohlen' => $wert === self::STUFE_EMPFOHLEN,
+                ];
             }
         }
 

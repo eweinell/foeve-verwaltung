@@ -121,6 +121,7 @@ return static function (array $settings): ContainerInterface {
             $c->get(MailDienst::class),
             $c->get(Versionierung::class),
             $c->get(Audit::class),
+            $c->get(Einstellungen::class),
             (string) $settings['app']['url'],
             (string) $settings['crypto']['key'],
         ),

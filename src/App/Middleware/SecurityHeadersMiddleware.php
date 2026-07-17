@@ -23,11 +23,19 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         // (TOTP-QR wird als data:-URI eingebunden).
         // Einzige Ausnahme (KONZEPT §F2): das TrustCaptcha-Skript auf der
         // öffentlichen Antragsseite (/antrag …).
+        //
+        // TrustCaptcha rechnet einen Proof-of-Work per WebAssembly in einem
+        // Worker; die Altanwendung lief ganz ohne CSP, dort ist das nie
+        // aufgefallen. 'wasm-unsafe-eval' und worker-src blob: sind deshalb nur
+        // auf /antrag freigegeben — beim ersten Deploy die Browser-Konsole auf
+        // CSP-Verstöße prüfen.
         $istAntrag = str_starts_with($request->getUri()->getPath(), '/antrag');
-        $tc = 'https://cdn.trustcaptcha.com';
+        $tc = 'https://cdn.trustcomponent.com';
         $tcApi = 'https://api.trustcaptcha.com';
 
-        $scriptSrc = $istAntrag ? "script-src 'self' {$tc}; " : "script-src 'self'; ";
+        $scriptSrc = $istAntrag
+            ? "script-src 'self' {$tc} 'wasm-unsafe-eval'; worker-src 'self' blob:; "
+            : "script-src 'self'; worker-src 'self'; ";
         $connectSrc = $istAntrag ? "connect-src 'self' {$tcApi}; " : "connect-src 'self'; ";
 
         $csp = "default-src 'self'; "

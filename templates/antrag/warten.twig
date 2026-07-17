@@ -1,20 +1,68 @@
 {% extends 'layout.twig' %}
-{% block titel %}Bitte E-Mail bestätigen{% endblock %}
-{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block titel %}E-Mail-Bestätigung erforderlich{% endblock %}
+{% block container_klasse %}antrag-seite{% endblock %}
 {% block inhalt %}
-    <div class="karte text-center">
-        <img src="/img/logo.png" alt="" style="height:40px">
-        <h1 style="margin-top:12px">Fast geschafft!</h1>
-        <p>Wir haben Ihnen eine E-Mail geschickt. Bitte öffnen Sie die Nachricht und klicken Sie auf
-            <strong>„Jetzt bestätigen"</strong>, um Ihren Antrag abzuschließen.</p>
-        <p class="feld-hinweis">Keine E-Mail erhalten? Sehen Sie auch im Spam-Ordner nach.</p>
+    <div class="text-center">
+        {% if zustand == 'bestaetigt' %}
+            <div class="icon success">✓</div>
+            <h1>Bereits bestätigt</h1>
+            <p>Ihre E-Mail-Adresse wurde bereits bestätigt. Sie müssen nichts weiter tun.</p>
+        {% elseif zustand == 'unbekannt' %}
+            <div class="icon error">✗</div>
+            <h1>Ungültige Anfrage</h1>
+            <p>Zu diesem Link liegt kein offener Antrag vor.</p>
+            <a href="/antrag" class="button">Zum Antragsformular</a>
+        {% else %}
+            <div class="waiting-icon">📧</div>
+            <h1>Fast geschafft!</h1>
+            <p class="untertitel">Nur noch ein Schritt zur Mitgliedschaft</p>
 
-        {% if token %}
-            <form method="post" action="/antrag/erneut-senden" class="abstand-oben">
-                <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
-                <input type="hidden" name="token" value="{{ token }}">
-                <button type="submit" class="button button-sekundaer">E-Mail erneut senden</button>
-            </form>
+            <div class="step">
+                <strong>📬 Schritt 1: E-Mail öffnen</strong>
+                Wir haben Ihnen eine E-Mail an Ihre angegebene Adresse gesendet.
+            </div>
+
+            <div class="step">
+                <strong>🔗 Schritt 2: Link klicken</strong>
+                Öffnen Sie die E-Mail und klicken Sie auf den Bestätigungslink.
+            </div>
+
+            <div class="step">
+                <strong>✅ Schritt 3: Fertig!</strong>
+                Nach dem Klick ist Ihr Antrag abgeschlossen und wird vom Vorstand geprüft.
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tipp:</strong> Prüfen Sie auch Ihren Spam-Ordner, falls die E-Mail nicht
+                innerhalb weniger Minuten ankommt.
+            </div>
+
+            <div class="timer-box{{ wartet_sekunden > 0 ? '' : ' ready' }}" id="timerBox"
+                 data-wartet="{{ wartet_sekunden }}">
+                <p id="timerText">
+                    {% if wartet_sekunden > 0 %}
+                        E-Mail nicht erhalten?
+                    {% else %}
+                        <strong>E-Mail nicht erhalten?</strong><br>Sie können jetzt eine neue Bestätigungs-E-Mail anfordern.
+                    {% endif %}
+                </p>
+                <p id="countdown" class="feld-hinweis"></p>
+                <form method="post" action="/antrag/erneut-senden">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <input type="hidden" name="ref" value="{{ ref }}">
+                    <button type="submit" class="button button-sekundaer" id="resendBtn"
+                            {{ wartet_sekunden > 0 ? 'disabled' : '' }}>
+                        E-Mail erneut senden
+                    </button>
+                </form>
+            </div>
+
+            <script src="/js/antrag-warten.js" defer></script>
         {% endif %}
+
+        <p class="feld-hinweis abstand-oben">
+            Bei Problemen erreichen Sie uns unter
+            <a href="mailto:foerderverein@gymnasium.herzogenrath.de">foerderverein@gymnasium.herzogenrath.de</a>
+        </p>
     </div>
 {% endblock %}

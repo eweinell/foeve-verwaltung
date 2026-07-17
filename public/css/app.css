@@ -389,6 +389,163 @@ table.daten tbody tr:hover { background: var(--flaeche-alt); }
 .zeile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .abstand-oben { margin-top: 20px; }
 
+/* ===== Öffentliche Antragsseite (F2) =====
+ * Aus styles.css der Anmelde-App übernommen: die kartenzentrierte Werbeseite mit
+ * CTA-Knöpfen, Schrittliste und Timer, die es in der Verwaltung sonst nirgends gibt.
+ * Alles unter .antrag-seite, damit der Admin-Bereich unberührt bleibt.
+ */
+.antrag-seite {
+    background: var(--flaeche);
+    border-radius: var(--radius-karte);
+    box-shadow: var(--schatten);
+    max-width: 560px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 40px 40px 10px;
+}
+
+.antrag-logo { height: 64px; width: auto; max-width: 100%; }
+
+.antrag-seite h1 { font-size: 26px; margin-bottom: 8px; }
+.antrag-seite h2 { font-size: 22px; }
+
+.intro-pitch { margin-bottom: 40px; }
+
+/* Das Formular selbst als abgesetzter Block (Sprungziel der CTA-Knöpfe). */
+#antragsformular {
+    scroll-margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid var(--rahmen-leicht);
+    margin-top: 40px;
+}
+
+.beitrag-options { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.beitrag-options .radio-option { margin-bottom: 0; }
+.radio-option span { font-size: 15px; color: var(--text-mittel); font-weight: 500; }
+.radio-option input[type="radio"]:checked + span { color: var(--text-stark); font-weight: 600; }
+.stufe-hinweis { display: block; color: var(--text-schwach); font-weight: normal; margin-top: 2px; }
+
+#wunsch_container { margin-top: 10px; }
+#wunsch_container[hidden] { display: none; }
+
+.address-row { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.address-row label { margin-bottom: 6px; }
+
+/* Handlungsaufruf — der schwebende folgt beim Scrollen. */
+.cta-button {
+    display: inline-block;
+    width: 100%;
+    background: var(--farbe-primaer);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--tempo);
+    text-decoration: none;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.cta-button:hover {
+    background: var(--farbe-primaer-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 118, 188, 0.25);
+}
+
+.cta-button-floating {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 420px;
+    z-index: 1000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.cta-button-floating.visible { opacity: 1; visibility: visible; }
+.cta-button-floating:hover { transform: translateX(-50%) translateY(-1px); }
+
+/* Statusgrafiken der Warte-/Bestätigungsseiten. */
+.icon, .waiting-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+.waiting-icon { background: var(--erfolg-bg); margin-bottom: 24px; }
+.icon.success { background: var(--erfolg-bg); color: var(--erfolg-text); }
+.icon.error   { background: var(--fehler-bg); color: var(--fehler-text); }
+
+.step {
+    background: var(--flaeche-alt);
+    padding: 16px;
+    border-radius: var(--radius);
+    margin: 12px 0;
+    border-left: 3px solid #9ca3af;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text-normal);
+}
+.step strong { color: var(--text-mittel); display: block; margin-bottom: 4px; }
+
+.timer-box {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-rahmen);
+    padding: 16px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    text-align: center;
+}
+.timer-box.ready { background: var(--erfolg-bg); border-color: var(--erfolg); }
+.timer-box form { margin: 0; }
+
+/* Rechtstexte (datenschutz.html/impressum.html, statisch ausgeliefert). */
+.container { max-width: 800px; margin: 40px auto; padding: 40px 20px; }
+.contact-box {
+    background: var(--flaeche-alt);
+    padding: 20px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    border: 1px solid var(--rahmen-leicht);
+}
+.highlight { background: var(--flaeche-alt); border-left: 3px solid #9ca3af; padding: 15px; margin: 20px 0; }
+.date { color: var(--text-schwach); font-size: 14px; margin-bottom: 30px; }
+.subtitle { color: var(--text-schwach); font-size: 14px; margin-bottom: 30px; }
+
+.link {
+    display: inline-block;
+    margin-top: 30px;
+    color: var(--text-mittel);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    transition: all var(--tempo);
+}
+.link:hover { background: var(--flaeche-alt); }
+
+.footer { margin-top: 2rem; padding: 1rem; text-align: center; font-size: 13px; }
+.footer .link { margin-top: 0; }
+
+.text-left { text-align: left; }
+
+@media (max-width: 540px) {
+    .antrag-seite { padding: 24px 20px 10px; margin: 0 auto; border-radius: 0; }
+    .address-row { grid-template-columns: 1fr; }
+}
+
 /* ===== Fußzeile ===== */
 .fusszeile {
     max-width: var(--inhalt-breite);

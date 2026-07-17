@@ -1,21 +1,37 @@
 {% extends 'layout.twig' %}
 {% block titel %}Antrag{% endblock %}
-{% block container_klasse %}inhalt-schmal{% endblock %}
+{% block container_klasse %}antrag-seite{% endblock %}
 {% block inhalt %}
-    <div class="karte text-center">
-        <img src="/img/logo.png" alt="" style="height:40px">
+    <div class="text-center">
         {% if ergebnis == 'ok' %}
-            <h1 style="margin-top:12px">Vielen Dank!</h1>
-            <div class="alert alert-success">Ihr Antrag ist bestätigt und wird nun vom Vorstand geprüft.</div>
-            <p>Sie erhalten nach der Aufnahme eine Begrüßungs-E-Mail.</p>
+            <div class="icon success">✓</div>
+            <h1>Vielen Dank!</h1>
+            <p>Ihr Mitgliedsantrag ist erfolgreich beim Förderverein des Städtischen Gymnasiums
+                Herzogenrath eingegangen.</p>
+            <div class="info-box text-left">
+                <strong>Wie geht es weiter?</strong>
+                <ul>
+                    <li>Der Vorstand prüft Ihren Antrag.</li>
+                    <li>Sie erhalten anschließend eine persönliche Willkommensnachricht des
+                        Vereinsvorstands mit Ihrer Mandatsreferenz.</li>
+                    <li>Der Jahresbeitrag wird per SEPA-Lastschrift eingezogen &ndash; Sie werden
+                        mindestens 14 Tage vor dem Einzug per E-Mail informiert.</li>
+                </ul>
+            </div>
         {% elseif ergebnis == 'schon' %}
-            <h1 style="margin-top:12px">Bereits bestätigt</h1>
-            <div class="alert alert-info">Dieser Antrag wurde bereits bestätigt. Sie müssen nichts weiter tun.</div>
+            <div class="icon success">✓</div>
+            <h1>Bereits bestätigt</h1>
+            <p>Dieser Antrag wurde bereits bestätigt. Sie müssen nichts weiter tun.</p>
         {% else %}
-            <h1 style="margin-top:12px">Link ungültig</h1>
-            <div class="alert alert-error">Der Bestätigungslink ist ungültig oder abgelaufen.</div>
-            <p>Bitte stellen Sie den Antrag ggf. erneut.</p>
+            <div class="icon error">✗</div>
+            <h1>Fehler bei der Bestätigung</h1>
+            <p>Der Bestätigungslink ist ungültig oder abgelaufen.</p>
             <a href="/antrag" class="button">Zum Antragsformular</a>
         {% endif %}
+
+        <p class="feld-hinweis abstand-oben">
+            Bei Fragen erreichen Sie uns unter
+            <a href="mailto:foerderverein@gymnasium.herzogenrath.de">foerderverein@gymnasium.herzogenrath.de</a>
+        </p>
     </div>
 {% endblock %}
