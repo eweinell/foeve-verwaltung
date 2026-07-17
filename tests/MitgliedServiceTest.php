@@ -9,9 +9,12 @@ use App\Repository\AntragRepository;
 use App\Repository\ForderungRepository;
 use App\Repository\MandatRepository;
 use App\Repository\MitgliedRepository;
+use App\Repository\VorlageRepository;
 use App\Service\AnredeDienst;
 use App\Service\Audit;
+use App\Service\Einstellungen;
 use App\Service\Krypto;
+use App\Service\VorlagenService;
 use App\Service\MailDienst;
 use App\Service\MandatService;
 use App\Service\MitgliedService;
@@ -44,6 +47,7 @@ final class MitgliedServiceTest extends TestCase
             $audit,
         );
         $sollstellung = new SollstellungService($this->db, new ForderungRepository($this->db), $audit);
+        $vorlagen = new VorlagenService(new VorlageRepository($this->db), new AnredeDienst(), new Einstellungen($this->db));
         $this->service = new MitgliedService(
             $this->db,
             $versionierung,
@@ -54,6 +58,7 @@ final class MitgliedServiceTest extends TestCase
             $audit,
             $mandatService,
             $sollstellung,
+            $vorlagen,
         );
     }
 
@@ -140,8 +145,8 @@ final class MitgliedServiceTest extends TestCase
         self::assertSame(Mitgliedsstatus::AKTIV, $mitglied['status']);
         self::assertNotNull($mitglied['eintrittsdatum']);
 
-        // Begrüßungsmail in der Queue.
-        self::assertSame(2, (int) $this->db->einWert("SELECT COUNT(*) FROM email_queue WHERE betreff = 'Willkommen im Förderverein'"));
+        // Begrüßungsmail in der Queue (Betreff aus der Systemvorlage „begruessung").
+        self::assertSame(2, (int) $this->db->einWert("SELECT COUNT(*) FROM email_queue WHERE betreff LIKE 'Willkommen im Förderverein%'"));
         // Audit-Eintrag.
         self::assertGreaterThanOrEqual(1, (int) $this->db->einWert("SELECT COUNT(*) FROM audit_log WHERE aktion = 'mitglied_aktiviert'"));
     }

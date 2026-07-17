@@ -1,0 +1,89 @@
+{% extends 'layout.twig' %}
+{% block titel %}Neue Versandaktion{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Neue Versandaktion</h1>
+            <p class="untertitel">Empfänger filtern, Vorlage oder Freitext wählen, Vorschau prüfen und absenden.</p>
+        </div>
+        <a href="/email" class="button button-sekundaer">Abbrechen</a>
+    </div>
+
+    <form method="post" action="/email" enctype="multipart/form-data">
+        <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+
+        <div class="karte">
+            <h2 style="margin-top:0">1. Empfänger</h2>
+            <div class="form-raster">
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="">alle</option>
+                        {% for wert, label in statusliste %}<option value="{{ wert }}" {{ alt.status == wert ? 'selected' : '' }}>{{ label }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="zahlweise">Zahlweise</label>
+                    <select id="zahlweise" name="zahlweise">
+                        <option value="">alle</option>
+                        <option value="lastschrift" {{ alt.zahlweise == 'lastschrift' ? 'selected' : '' }}>Lastschrift</option>
+                        <option value="selbstzahler" {{ alt.zahlweise == 'selbstzahler' ? 'selected' : '' }}>Selbstzahler</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="land">Land</label>
+                    <select id="land" name="land">
+                        <option value="">alle</option>
+                        {% for code, name in laender %}<option value="{{ code }}" {{ alt.land == code ? 'selected' : '' }}>{{ name }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>{{ empfaenger.anzahl_email }}</strong> per E-Mail,
+                <strong>{{ empfaenger.anzahl_post }}</strong> per Post (kein E-Mail-Kontakt oder ohne Adresse — Brief-Liste).
+                <button type="submit" formaction="/email/vorschau" class="button button-sekundaer button-klein" style="margin-left:10px">Empfänger/Vorschau aktualisieren</button>
+            </div>
+        </div>
+
+        <div class="karte">
+            <h2 style="margin-top:0">2. Inhalt</h2>
+            <div class="form-group">
+                <label for="vorlage">Vorlage (optional)</label>
+                <select id="vorlage" name="vorlage">
+                    <option value="">— Freitext —</option>
+                    {% for v in vorlagen %}<option value="{{ v.schluessel }}" {{ alt.vorlage == v.schluessel ? 'selected' : '' }}>{{ v.schluessel }} — {{ v.betreff }}</option>{% endfor %}
+                </select>
+                <div class="feld-hinweis">Bei gewählter Vorlage werden Betreff/Text unten ignoriert.</div>
+            </div>
+            <div class="form-group">
+                <label for="betreff">Betreff (Freitext)</label>
+                <input type="text" id="betreff" name="betreff" value="{{ alt.betreff }}">
+            </div>
+            <div class="form-group">
+                <label for="text">Text (Freitext)</label>
+                <textarea id="text" name="text" rows="8">{{ alt.text }}</textarea>
+                <div class="feld-hinweis">Platzhalter: {% for p in platzhalter %}<span class="mono">{{ '{{' }}{{ p }}{{ '}}' }}</span>{{ not loop.last ? ', ' : '' }}{% endfor %}</div>
+            </div>
+            <div class="form-group">
+                <label for="anhang">PDF-Anhang (optional, max. 5 MB)</label>
+                <input type="file" id="anhang" name="anhang" accept="application/pdf">
+            </div>
+        </div>
+
+        {% if vorschau %}
+            <div class="karte">
+                <h2 style="margin-top:0">Vorschau (Beispiel-Mitglied)</h2>
+                <p><strong>Betreff:</strong> {{ vorschau.betreff }}</p>
+                <pre class="mono" style="white-space:pre-wrap;background:var(--flaeche-alt);padding:12px;border-radius:8px">{{ vorschau.text }}</pre>
+            </div>
+        {% endif %}
+
+        <div class="karte">
+            <h2 style="margin-top:0">3. Prüfen &amp; Absenden</h2>
+            <div class="zeile">
+                <button type="submit" formaction="/email/testmail" class="button button-sekundaer">Testmail an mich</button>
+                <button type="submit" onclick="return confirm('Versandaktion jetzt starten und Mails einreihen?')" class="button">Absenden ({{ empfaenger.anzahl_email }} Mails)</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}

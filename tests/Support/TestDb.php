@@ -82,7 +82,31 @@ final class TestDb
                 fehltext TEXT NULL,
                 versuche INTEGER NOT NULL DEFAULT 0,
                 geplant_ab TEXT NOT NULL,
+                naechster_versuch TEXT NULL,
                 gesendet_am TEXT NULL
+            )',
+            // E-Mail-System (AP4) — portabel zu migrations/005.
+            'CREATE TABLE email_vorlage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                schluessel TEXT NOT NULL UNIQUE,
+                betreff TEXT NOT NULL,
+                body_text TEXT NOT NULL,
+                body_html TEXT NULL,
+                system INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )',
+            'CREATE TABLE versandaktion (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                typ TEXT NOT NULL,
+                vorlage_schluessel TEXT NULL,
+                betreff TEXT NULL,
+                anhang_pfad TEXT NULL,
+                erstellt_von INTEGER NULL,
+                erstellt_am TEXT NOT NULL,
+                anzahl_gesamt INTEGER NOT NULL DEFAULT 0,
+                anzahl_gesendet INTEGER NOT NULL DEFAULT 0,
+                anzahl_fehler INTEGER NOT NULL DEFAULT 0
             )',
             // Test-Zieltabelle + Versionstabelle für den Versionierungs-Service (F10).
             'CREATE TABLE testperson (

@@ -31,6 +31,7 @@ final class EinzugslaufService
         private readonly Krypto $krypto,
         private readonly MailDienst $mail,
         private readonly AnredeDienst $anrede,
+        private readonly VorlagenService $vorlagen,
         private readonly Einstellungen $einstellungen,
         private readonly SepaXmlValidator $validator,
         private readonly Audit $audit,
@@ -375,24 +376,18 @@ final class EinzugslaufService
      */
     private function sendePreNotification(array $p, string $faellig, string $ci, int $laufId): void
     {
-        $anrede = $this->anrede->briefanrede([
-            'anrede'   => $p['anrede'],
-            'nachname' => $p['nachname'],
-        ]);
-        $betrag = number_format((float) $p['betrag'], 2, ',', '.');
-        $iban = $this->maskiere($p);
-        $text = "{$anrede},\n\n"
-            . "wir kündigen den Einzug Ihres Mitgliedsbeitrags per SEPA-Lastschrift an:\n\n"
-            . "Betrag: {$betrag} €\n"
-            . "Fälligkeit: {$faellig}\n"
-            . "Mandatsreferenz: {$p['mandatsreferenz']}\n"
-            . "Gläubiger-Identifikationsnummer: {$ci}\n"
-            . "IBAN: {$iban}\n\n"
-            . "Bitte sorgen Sie für ausreichende Deckung.\n\n"
-            . "Mit freundlichen Grüßen\nFörderverein Gymnasium Herzogenrath";
+        $kontext = $this->vorlagen->kontext(
+            ['anrede' => $p['anrede'], 'nachname' => $p['nachname'], 'jahresbeitrag' => $p['betrag']],
+            [
+                'faelligkeitsdatum' => $faellig,
+                'mandatsreferenz'   => (string) $p['mandatsreferenz'],
+                'glaeubiger_id'     => $ci,
+                'iban_maskiert'     => $this->maskiere($p),
+            ],
+        );
+        $mail = $this->vorlagen->rendere('prenotification', $kontext);
 
-        // Template-Schlüssel „prenotification" folgt in AP4; bis dahin Fixtext.
-        $this->mail->einreihen((string) $p['email'], 'Ankündigung SEPA-Lastschrift', $text, mitgliedId: (int) $p['mitglied_id']);
+        $this->mail->einreihen((string) $p['email'], $mail['betreff'], $mail['text'], $mail['html'], mitgliedId: (int) $p['mitglied_id']);
     }
 
     private function summenAktualisieren(int $laufId): void

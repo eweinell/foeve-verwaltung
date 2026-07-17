@@ -67,6 +67,7 @@ return static function (array $settings): ContainerInterface {
             $c->get(BenutzerRepository::class),
             $c->get(MailDienst::class),
             $c->get(Einstellungen::class),
+            $c->get(App\Service\VorlagenService::class),
             (string) ($settings['mail']['absender_name'] ?: 'Vereinsverwaltung'),
         ),
 
@@ -107,6 +108,7 @@ return static function (array $settings): ContainerInterface {
             $c->get(Krypto::class),
             $c->get(MailDienst::class),
             $c->get(App\Service\AnredeDienst::class),
+            $c->get(App\Service\VorlagenService::class),
             $c->get(Einstellungen::class),
             $c->get(App\Service\SepaXmlValidator::class),
             $c->get(Audit::class),
@@ -122,11 +124,22 @@ return static function (array $settings): ContainerInterface {
             $c->get(Versionierung::class),
             $c->get(Audit::class),
             $c->get(Einstellungen::class),
+            $c->get(App\Service\VorlagenService::class),
             (string) $settings['app']['url'],
             (string) $settings['crypto']['key'],
         ),
 
         // Controller mit Konfigurationsbedarf.
+        App\Controller\EmailController::class => static fn (ContainerInterface $c) => new App\Controller\EmailController(
+            $c->get(Ansicht::class),
+            $c->get(Flash::class),
+            $c->get(App\Service\VersandaktionService::class),
+            $c->get(App\Service\VorlagenService::class),
+            $c->get(App\Repository\MitgliedRepository::class),
+            $c->get(MailDienst::class),
+            (string) $settings['pfade']['basis'],
+        ),
+
         App\Controller\EinstellungenController::class => static fn (ContainerInterface $c) => new App\Controller\EinstellungenController(
             $c->get(Ansicht::class),
             $c->get(Flash::class),

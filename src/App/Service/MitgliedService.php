@@ -36,6 +36,7 @@ final class MitgliedService
         private readonly Audit $audit,
         private readonly MandatService $mandate,
         private readonly SollstellungService $sollstellung,
+        private readonly VorlagenService $vorlagen,
     ) {
     }
 
@@ -293,12 +294,8 @@ final class MitgliedService
         if (!$this->hatEmail($mitglied)) {
             return;
         }
-        $anrede = $this->anrede->briefanrede($mitglied);
-        $text = "{$anrede},\n\n"
-            . "herzlich willkommen im Förderverein Gymnasium Herzogenrath! Ihre Mitgliedschaft ist nun aktiv.\n\n"
-            . "Mit freundlichen Grüßen\nDer Vorstand";
-        // Template-Schlüssel „begruessung" folgt in AP4; bis dahin Fixtext.
-        $this->mail->einreihen((string) $mitglied['email'], 'Willkommen im Förderverein', $text, mitgliedId: (int) $mitglied['id']);
+        $mail = $this->vorlagen->rendere('begruessung', $this->vorlagen->kontext($mitglied));
+        $this->mail->einreihen((string) $mitglied['email'], $mail['betreff'], $mail['text'], $mail['html'], mitgliedId: (int) $mitglied['id']);
     }
 
     /**
@@ -309,12 +306,9 @@ final class MitgliedService
         if (!$this->hatEmail($mitglied)) {
             return;
         }
-        $anrede = $this->anrede->briefanrede($mitglied);
-        $datum = $this->datumDeutsch($wirksamZum);
-        $text = "{$anrede},\n\n"
-            . "wir bestätigen den Eingang Ihrer Kündigung. Ihre Mitgliedschaft endet zum {$datum}.\n\n"
-            . "Mit freundlichen Grüßen\nDer Vorstand";
-        $this->mail->einreihen((string) $mitglied['email'], 'Kündigungsbestätigung', $text, mitgliedId: (int) $mitglied['id']);
+        $kontext = $this->vorlagen->kontext($mitglied, ['faelligkeitsdatum' => $this->datumDeutsch($wirksamZum)]);
+        $mail = $this->vorlagen->rendere('kuendigungsbestaetigung', $kontext);
+        $this->mail->einreihen((string) $mitglied['email'], $mail['betreff'], $mail['text'], $mail['html'], mitgliedId: (int) $mitglied['id']);
     }
 
     /**

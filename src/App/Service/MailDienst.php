@@ -67,13 +67,51 @@ final class MailDienst
         $jetzt = (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Berlin')))->format('Y-m-d H:i:s');
         $limit = max(1, $limit);
 
+        // Priorität „sofort" (0) vor Massenversand, dann FIFO. Für den Retry
+        // wartende Mails erst nach naechster_versuch berücksichtigen.
         return $this->db->alleZeilen(
             "SELECT * FROM email_queue
-              WHERE status = 'wartend' AND geplant_ab <= :jetzt
+              WHERE status = 'wartend'
+                AND geplant_ab <= :jetzt
+                AND (naechster_versuch IS NULL OR naechster_versuch <= :jetzt2)
               ORDER BY prioritaet ASC, geplant_ab ASC, id ASC
               LIMIT {$limit}",
-            ['jetzt' => $jetzt],
+            ['jetzt' => $jetzt, 'jetzt2' => $jetzt],
         );
+    }
+
+    /**
+     * Verarbeitet bis zu $limit wartende Mails. $sender liefert je Mail
+     * ['status' => 'ok'|'temp'|'perm', 'fehltext' => string]. Temporäre Fehler
+     * (4xx) werden einmal nach 15 Minuten wiederholt, danach als Fehler markiert.
+     *
+     * @param callable(array<string,mixed>):array{status:string,fehltext?:string} $sender
+     * @return array{gesendet:int,fehler:int,wiederholung:int}
+     */
+    public function verarbeite(int $limit, callable $sender): array
+    {
+        $gesendet = 0;
+        $fehler = 0;
+        $wiederholung = 0;
+
+        foreach ($this->naechsteWartende($limit) as $mail) {
+            $ergebnis = $sender($mail);
+            $status = $ergebnis['status'] ?? 'perm';
+            $fehltext = (string) ($ergebnis['fehltext'] ?? '');
+
+            if ($status === 'ok') {
+                $this->alsGesendet($mail['id']);
+                $gesendet++;
+            } elseif ($status === 'temp' && (int) $mail['versuche'] < 1) {
+                $this->planeWiederholung($mail['id'], $fehltext);
+                $wiederholung++;
+            } else {
+                $this->alsFehler($mail['id'], $fehltext);
+                $fehler++;
+            }
+        }
+
+        return ['gesendet' => $gesendet, 'fehler' => $fehler, 'wiederholung' => $wiederholung];
     }
 
     public function alsGesendet(int|string $id): void
@@ -93,5 +131,48 @@ final class MailDienst
               WHERE id = :id",
             ['txt' => mb_substr($fehltext, 0, 500), 'id' => $id],
         );
+    }
+
+    /**
+     * Plant eine Mail nach temporärem Fehler in 15 Minuten erneut ein.
+     */
+    public function planeWiederholung(int|string $id, string $fehltext, int $minuten = 15): void
+    {
+        $naechster = (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Berlin')))
+            ->modify("+{$minuten} minutes")->format('Y-m-d H:i:s');
+        $this->db->ausfuehren(
+            "UPDATE email_queue
+                SET status = 'wartend', versuche = versuche + 1, naechster_versuch = :nv, fehltext = :txt
+              WHERE id = :id",
+            ['nv' => $naechster, 'txt' => mb_substr($fehltext, 0, 500), 'id' => $id],
+        );
+    }
+
+    /**
+     * Fehlgeschlagene Mails wieder einreihen (einzeln oder alle einer Versandaktion).
+     *
+     * @return int Anzahl neu eingereihter Mails
+     */
+    public function fehlerNeuEinreihen(?int $versandaktionId = null, ?int $mailId = null): int
+    {
+        $jetzt = (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Berlin')))->format('Y-m-d H:i:s');
+        if ($mailId !== null) {
+            $stmt = $this->db->ausfuehren(
+                "UPDATE email_queue SET status = 'wartend', naechster_versuch = NULL, versuche = 0, geplant_ab = :g WHERE id = :id AND status = 'fehler'",
+                ['g' => $jetzt, 'id' => $mailId],
+            );
+
+            return $stmt->rowCount();
+        }
+        if ($versandaktionId !== null) {
+            $stmt = $this->db->ausfuehren(
+                "UPDATE email_queue SET status = 'wartend', naechster_versuch = NULL, versuche = 0, geplant_ab = :g WHERE versandaktion_id = :v AND status = 'fehler'",
+                ['g' => $jetzt, 'v' => $versandaktionId],
+            );
+
+            return $stmt->rowCount();
+        }
+
+        return 0;
     }
 }

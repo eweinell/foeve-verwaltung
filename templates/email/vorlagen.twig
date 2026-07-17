@@ -1,0 +1,30 @@
+{% extends 'layout.twig' %}
+{% block titel %}E-Mail-Vorlagen{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>E-Mail-Vorlagen</h1>
+            <p class="untertitel">Systemvorlagen sind überschreibbar; „Zurücksetzen" stellt den Standardtext wieder her.{% if not ist_admin %} Nur Administratoren dürfen ändern.{% endif %}</p>
+        </div>
+        <a href="/email" class="button button-sekundaer">Zur Übersicht</a>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead><tr><th>Schlüssel</th><th>Betreff</th><th>Art</th><th></th></tr></thead>
+            <tbody>
+                {% for v in vorlagen %}
+                    <tr>
+                        <td class="mono">{{ v.schluessel }}</td>
+                        <td>{{ v.betreff }}</td>
+                        <td>
+                            {% if v.system %}<span class="badge badge-info">System{{ v.ist_override ? ' · angepasst' : '' }}</span>
+                            {% else %}<span class="badge badge-neutral">eigene</span>{% endif %}
+                        </td>
+                        <td><a href="/email/vorlagen/{{ v.schluessel }}" class="button button-sekundaer button-klein">{{ ist_admin ? 'Bearbeiten' : 'Ansehen' }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

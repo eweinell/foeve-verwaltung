@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use App\Domain\Mitgliedsstatus;
+use App\Repository\VorlageRepository;
 use App\Repository\AntragRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\AntragService;
+use App\Service\AnredeDienst;
 use App\Service\Audit;
+use App\Service\VorlagenService;
 use App\Service\Einstellungen;
 use App\Service\Krypto;
 use App\Service\MailDienst;
@@ -45,6 +48,7 @@ final class AntragServiceTest extends TestCase
             new Versionierung($this->db),
             new Audit($this->db),
             $einstellungen,
+            new VorlagenService(new VorlageRepository($this->db), new AnredeDienst(), $einstellungen),
             'https://verwaltung.example.de',
             'pepper',
         );
