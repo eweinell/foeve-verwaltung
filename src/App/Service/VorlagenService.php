@@ -35,25 +35,46 @@ final class VorlagenService
     }
 
     /**
+     * Alle in den Texten vorkommenden Platzhalternamen (ohne Dubletten).
+     *
+     * @return array<int,string>
+     */
+    public function platzhalterIn(string ...$texte): array
+    {
+        $namen = [];
+        foreach ($texte as $text) {
+            if (preg_match_all('/\{\{\s*([a-z_]+)\s*\}\}/', $text, $treffer)) {
+                foreach ($treffer[1] as $name) {
+                    $namen[$name] = true;
+                }
+            }
+        }
+
+        return array_keys($namen);
+    }
+
+    /**
      * Prüft, dass nur bekannte Platzhalter vorkommen.
      *
      * @throws \DomainException mit Auflistung der unbekannten Platzhalter
      */
     public function validiere(string ...$texte): void
     {
-        $unbekannt = [];
-        foreach ($texte as $text) {
-            if (preg_match_all('/\{\{\s*([a-z_]+)\s*\}\}/', $text, $treffer)) {
-                foreach ($treffer[1] as $name) {
-                    if (!in_array($name, SystemVorlagen::PLATZHALTER, true)) {
-                        $unbekannt[$name] = true;
-                    }
-                }
-            }
-        }
+        $unbekannt = array_values(array_filter(
+            $this->platzhalterIn(...$texte),
+            static fn (string $name): bool => !in_array($name, SystemVorlagen::PLATZHALTER, true),
+        ));
         if ($unbekannt !== []) {
-            throw new \DomainException('Unbekannte Platzhalter: ' . implode(', ', array_map(static fn ($n) => '{{' . $n . '}}', array_keys($unbekannt))));
+            throw new \DomainException('Unbekannte Platzhalter: ' . self::liste($unbekannt));
         }
+    }
+
+    /**
+     * @param array<int,string> $namen
+     */
+    public static function liste(array $namen): string
+    {
+        return implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $namen));
     }
 
     /**

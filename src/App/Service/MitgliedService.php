@@ -135,7 +135,12 @@ final class MitgliedService
         $this->mandate->ausAntragErstellen($id, $nummer, $benutzerId);
         $this->sollstellung->einzelsollstellung($id, (string) $mitglied['jahresbeitrag'], $benutzerId);
 
-        $this->begruessung($mitglied);
+        // $mitglied ist der Stand VOR der Aktivierung — Nummer und Eintrittsdatum
+        // nachtragen, sonst bleibt {{mitgliedsnummer}} in der Begrüßungsmail leer.
+        $this->begruessung(array_merge($mitglied, [
+            'mitgliedsnummer' => $nummer,
+            'eintrittsdatum'  => $eintritt,
+        ]));
         $this->audit->protokolliere($benutzerId, 'mitglied_aktiviert', 'mitglied', $id, ['nummer' => $nummer]);
 
         return $nummer;

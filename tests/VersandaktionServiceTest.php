@@ -83,6 +83,21 @@ final class VersandaktionServiceTest extends TestCase
         $this->service->inhalt(null, 'Betreff', 'Text mit {{quatsch}}');
     }
 
+    public function testVorlageMitKontextabhaengigenPlatzhalternWirdBeimStartAbgewiesen(): void
+    {
+        $this->seed();
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessageMatches('/\{\{mandatsreferenz\}\}/');
+        $this->service->starten(['status' => 'aktiv'], 'vereinspost', 'prenotification', '', '', null, 1);
+    }
+
+    public function testFreitextMitKontextabhaengigemPlatzhalterWirdBeimStartAbgewiesen(): void
+    {
+        $this->seed();
+        $this->expectException(\DomainException::class);
+        $this->service->starten(['status' => 'aktiv'], 'vereinspost', null, 'Betreff', 'IBAN: {{iban_maskiert}}', null, 1);
+    }
+
     public function testFortschritt(): void
     {
         $this->seed();

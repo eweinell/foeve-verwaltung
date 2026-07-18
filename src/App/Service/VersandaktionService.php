@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Domain\SystemVorlagen;
 use App\Repository\MitgliedRepository;
 use App\Support\Db;
 
@@ -81,6 +82,32 @@ final class VersandaktionService
     }
 
     /**
+     * Eine Versandaktion kennt nur den Mitglieds-Kontext. Vorlagen bzw. Freitexte mit
+     * Platzhaltern, die erst aus einem Einzugslauf, Mandat oder Antrag gefüllt werden
+     * (z. B. {{mandatsreferenz}}), würden still leere Zeilen erzeugen — deshalb hier
+     * abweisen statt versenden.
+     *
+     * @param array{betreff:string,text:string,html:?string} $inhalt
+     */
+    private function pruefeVersandtauglich(array $inhalt): void
+    {
+        $verwendet = $this->vorlagen->platzhalterIn($inhalt['betreff'], $inhalt['text'], $inhalt['html'] ?? '');
+        $nichtFuellbar = array_values(array_filter(
+            $verwendet,
+            static fn (string $name): bool => !in_array($name, SystemVorlagen::PLATZHALTER_ALLGEMEIN, true),
+        ));
+
+        if ($nichtFuellbar !== []) {
+            throw new \DomainException(
+                'Diese Platzhalter können in einer Versandaktion nicht gefüllt werden und blieben leer: '
+                . VorlagenService::liste($nichtFuellbar)
+                . '. Bitte eine Vorlage ohne diese Platzhalter wählen — Vorlagen wie »prenotification« '
+                . 'oder »doi_bestaetigung« werden automatisch aus dem Einzugslauf bzw. dem Antrag versendet.',
+            );
+        }
+    }
+
+    /**
      * Testmail an die eigene Adresse — startet die Aktion NICHT.
      *
      * @param array<string,mixed>|null $beispiel
@@ -108,6 +135,7 @@ final class VersandaktionService
     public function starten(array $filter, string $typ, ?string $vorlageSchluessel, string $betreff, string $text, ?string $anhangPfad, ?int $benutzerId): array
     {
         $inhalt = $this->inhalt($vorlageSchluessel, $betreff, $text);
+        $this->pruefeVersandtauglich($inhalt);
         $empfaenger = $this->empfaenger($filter);
 
         $jetzt = $this->jetzt();
