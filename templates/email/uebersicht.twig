@@ -1,0 +1,38 @@
+{% extends 'layout.twig' %}
+{% block titel %}E-Mail{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>E-Mail / Vereinspost</h1>
+            <p class="untertitel">Massenversand an gefilterte Mitglieder, gedrosselt über die Queue.</p>
+        </div>
+        <div class="zeile">
+            <a href="/email/vorlagen" class="button button-sekundaer">Vorlagen</a>
+            <a href="/email/neu" class="button">Neue Versandaktion</a>
+        </div>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead><tr><th>Datum</th><th>Typ</th><th>Betreff</th><th class="num">Gesamt</th><th>Fortschritt</th><th></th></tr></thead>
+            <tbody>
+                {% for a in aktionen %}
+                    <tr>
+                        <td class="mono">{{ a.erstellt_am|date('d.m.Y H:i') }}</td>
+                        <td>{{ a.typ }}</td>
+                        <td>{{ a.betreff }}</td>
+                        <td class="num">{{ a.anzahl_gesamt }}</td>
+                        <td>
+                            <span class="badge badge-erfolg">{{ a.gesendet }} gesendet</span>
+                            {% if a.wartend %}<span class="badge badge-info">{{ a.wartend }} wartend</span>{% endif %}
+                            {% if a.fehler %}<span class="badge badge-fehler">{{ a.fehler }} Fehler</span>{% endif %}
+                        </td>
+                        <td><a href="/email/{{ a.id }}" class="button button-sekundaer button-klein">Öffnen</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center">Noch keine Versandaktionen.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

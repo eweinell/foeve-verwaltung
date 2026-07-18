@@ -27,6 +27,7 @@ final class ZweiFaktor
         private readonly BenutzerRepository $benutzer,
         private readonly MailDienst $mail,
         private readonly Einstellungen $einstellungen,
+        private readonly VorlagenService $vorlagen,
         string $ausstellername = 'Förderverein Gymnasium Herzogenrath',
     ) {
         // v3: QR-Provider zuerst, dann Aussteller. QR-Erzeugung via endroid (lokal).
@@ -66,14 +67,12 @@ final class ZweiFaktor
 
         $this->benutzer->setzeEmailCode((int) $benutzer['id'], password_hash($code, PASSWORD_DEFAULT), $bis);
 
-        $text = "Ihr Anmeldecode für die Vereinsverwaltung lautet: {$code}\n\n"
-            . "Der Code ist " . self::CODE_GUELTIG_MINUTEN . " Minuten gültig.\n"
-            . "Wenn Sie sich nicht anmelden wollten, ignorieren Sie diese E-Mail.";
-
+        $mail = $this->vorlagen->rendere('login_code', ['code' => $code]);
         $this->mail->einreihen(
             (string) $benutzer['email'],
-            'Ihr Anmeldecode',
-            $text,
+            $mail['betreff'],
+            $mail['text'],
+            $mail['html'],
             prioritaet: MailDienst::PRIO_SOFORT,
         );
     }

@@ -73,8 +73,11 @@ final class SqlPlatzhalterTest extends TestCase
                 }
 
                 $inhalt = (string) file_get_contents($datei->getPathname());
+                // (?:\\.|(?!\1).)*? statt .*?, damit escapte Anführungszeichen
+                // (z. B. \'keine\' in einem einfach gequoteten String) den
+                // String nicht vorzeitig beenden.
                 $gefunden = preg_match_all(
-                    '/([\'"])((?:INSERT|UPDATE|DELETE|SELECT|REPLACE)\s.*?)\1/is',
+                    '/([\'"])((?:INSERT|UPDATE|DELETE|SELECT|REPLACE)\s(?:\\\\.|(?!\1).)*?)\1/is',
                     $inhalt,
                     $m,
                     PREG_OFFSET_CAPTURE,

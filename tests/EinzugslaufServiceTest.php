@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests;
 
 use App\Domain\Bankarbeitstage;
+use App\Repository\VorlageRepository;
 use App\Repository\AntragRepository;
 use App\Repository\EinzugslaufRepository;
 use App\Repository\ForderungRepository;
@@ -12,6 +13,7 @@ use App\Repository\MandatRepository;
 use App\Repository\MitgliedRepository;
 use App\Service\AnredeDienst;
 use App\Service\Audit;
+use App\Service\VorlagenService;
 use App\Service\Einstellungen;
 use App\Service\EinzugslaufService;
 use App\Service\Krypto;
@@ -58,6 +60,7 @@ final class EinzugslaufServiceTest extends TestCase
             $this->krypto,
             new MailDienst($this->db),
             new AnredeDienst(),
+            new VorlagenService(new VorlageRepository($this->db), new AnredeDienst(), $this->einstellungen),
             $this->einstellungen,
             new SepaXmlValidator(),
             $audit,

@@ -9,7 +9,9 @@ use App\Controller\BenutzerController;
 use App\Controller\DashboardController;
 use App\Controller\EinstellungenController;
 use App\Controller\EinzugController;
+use App\Controller\EmailController;
 use App\Controller\ForderungController;
+use App\Controller\VorlageController;
 use App\Controller\MitgliedController;
 use App\Controller\ProfilController;
 use App\Middleware\AuthMiddleware;
@@ -71,6 +73,19 @@ return static function (App $app): void {
         $group->get('/sollstellung', [ForderungController::class, 'sollstellung']);
         $group->post('/sollstellung', [ForderungController::class, 'sollstellungAusfuehren']);
         $group->get('/forderungen', [ForderungController::class, 'offenePosten']);
+
+        // E-Mail-System / Versandaktionen (AP4)
+        $group->get('/email', [EmailController::class, 'uebersicht']);
+        $group->get('/email/neu', [EmailController::class, 'assistent']);
+        $group->post('/email/vorschau', [EmailController::class, 'vorschau']);
+        $group->post('/email/testmail', [EmailController::class, 'testmail']);
+        $group->post('/email', [EmailController::class, 'starten']);
+        $group->get('/email/vorlagen', [VorlageController::class, 'liste']);
+        $group->get('/email/vorlagen/{schluessel:[a-z0-9_]+}', [VorlageController::class, 'bearbeiten']);
+        $group->post('/email/vorlagen/{schluessel:[a-z0-9_]+}', [VorlageController::class, 'speichern']);
+        $group->post('/email/vorlagen/{schluessel:[a-z0-9_]+}/zuruecksetzen', [VorlageController::class, 'zuruecksetzen']);
+        $group->get('/email/{id:[0-9]+}', [EmailController::class, 'detail']);
+        $group->post('/email/{id:[0-9]+}/neu-einreihen', [EmailController::class, 'neuEinreihen']);
 
         // SEPA-Einzugslauf (AP3)
         $group->get('/einzug', [EinzugController::class, 'liste']);

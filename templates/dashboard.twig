@@ -39,6 +39,21 @@
     </div>
 
     <div class="karte">
+        <div class="seitenkopf" style="margin-bottom:12px">
+            <h2 style="margin:0">E-Mail-Queue</h2>
+            <a href="/email" class="button button-sekundaer button-klein">Versandaktionen</a>
+        </div>
+        <div class="zeile">
+            <span class="badge badge-info">{{ queue.wartend }} wartend</span>
+            {% if queue.fehler %}<span class="badge badge-fehler">{{ queue.fehler }} Fehler</span>{% endif %}
+            <span class="feld-hinweis">Letzter Cron-Lauf: {{ queue.letzter_lauf ? queue.letzter_lauf|date('d.m.Y H:i') : 'noch nie' }}</span>
+        </div>
+        {% if queue.cron_alt %}
+            <div class="alert alert-warn abstand-oben">Der Mail-Cron lief seit über 10 Minuten nicht — bitte den Cronjob <span class="mono">bin/mailqueue.php</span> prüfen.</div>
+        {% endif %}
+    </div>
+
+    <div class="karte">
         <div class="info-box">
             <strong>Hinweis:</strong> Sichern Sie Ihr Konto über
             <a href="/profil">Profil &amp; Zwei-Faktor</a>.

@@ -52,14 +52,15 @@ final class BenutzerRepository
             'INSERT INTO benutzer
                 (name, email, passwort_hash, rolle, aktiv, passwort_aendern_pflicht,
                  zwei_faktor_methode, fehlversuche, created_at, updated_at)
-             VALUES (:name, :email, :hash, :rolle, 1, :pfl, \'keine\', 0, :now, :now)',
+             VALUES (:name, :email, :hash, :rolle, 1, :pfl, \'keine\', 0, :created, :updated)',
             [
-                'name'  => $name,
-                'email' => mb_strtolower(trim($email)),
-                'hash'  => $passwortHash,
-                'rolle' => $rolle,
-                'pfl'   => $passwortAendernPflicht ? 1 : 0,
-                'now'   => $jetzt,
+                'name'    => $name,
+                'email'   => mb_strtolower(trim($email)),
+                'hash'    => $passwortHash,
+                'rolle'   => $rolle,
+                'pfl'     => $passwortAendernPflicht ? 1 : 0,
+                'created' => $jetzt,
+                'updated' => $jetzt,
             ],
         );
 

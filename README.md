@@ -5,7 +5,25 @@ Fachkonzept: [`KONZEPT.md`](KONZEPT.md), Grundregeln: [`CLAUDE.md`](CLAUDE.md),
 Arbeitspakete: [`briefings/`](briefings/).
 
 Stack: PHP 8.3+, MariaDB 10.6+, Slim 4 + Twig, PDO (kein ORM). Serverseitig
-gerendert, keine CDN-Einbindungen. Stand: **AP3 (SEPA-Export & Einzugslauf)**.
+gerendert, keine CDN-Einbindungen. Stand: **AP4 (E-Mail-System)**.
+
+## Was in AP4 enthalten ist
+
+- E-Mail-Vorlagen (F6) mit einfacher `{{platzhalter}}`-Engine (kein Twig für
+  Nutzereingaben); unbekannte Platzhalter werden beim Speichern abgewiesen.
+  Systemvorlagen (`begruessung`, `kuendigungsbestaetigung`, `prenotification`,
+  `doi_bestaetigung`, `login_code`) mit deutschen Default-Texten im Code,
+  in der DB überschreibbar (Admin). Die bisherigen Fixtexte laufen jetzt darüber.
+- Versandaktionen / Vereinspost: Empfänger über Mitglieder-Filter (E-Mail/Post-
+  Aufteilung), Vorlage oder Freitext, optionaler PDF-Anhang (≤ 5 MB), Vorschau mit
+  echten Daten + Testmail an die eigene Adresse, Freigabe reiht in die Queue ein.
+- Queue-Ausbau (`bin/mailqueue.php`): Drosselung, Priorität „sofort" vor
+  Massenversand, ein automatischer Retry nach 15 Min. bei temporären SMTP-Fehlern
+  (4xx), permanente Fehler mit Fehltext, Datei-Lock gegen parallele Cron-Läufe,
+  Text+HTML-Multipart, Reply-To. Fehlgeschlagene Mails einzeln/gesammelt neu
+  einreihbar.
+- Protokoll: Versandaktions-Übersicht mit Fortschritt (gesendet/wartend/fehler);
+  Dashboard-Kachel „E-Mail-Queue" mit Warnung bei hängendem Cron (> 10 Min.).
 
 ## Was in AP3 enthalten ist
 

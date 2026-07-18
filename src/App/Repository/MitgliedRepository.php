@@ -106,6 +106,20 @@ final class MitgliedRepository
     }
 
     /**
+     * Alle Mitglieder eines Filters (ohne Pagination) — für Versandaktionen (AP4)
+     * und Exporte (AP5).
+     *
+     * @param array<string,mixed> $filter
+     * @return array<int,array<string,mixed>>
+     */
+    public function alleGefiltert(array $filter): array
+    {
+        [$where, $params] = $this->filterKlausel($filter);
+
+        return $this->db->alleZeilen("SELECT * FROM mitglied {$where} ORDER BY nachname ASC, id ASC", $params);
+    }
+
+    /**
      * Legt einen neuen (Antrags-)Datensatz an. Rückgabe: neue ID.
      *
      * @param array<string,mixed> $daten

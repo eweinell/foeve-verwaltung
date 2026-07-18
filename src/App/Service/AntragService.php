@@ -36,6 +36,7 @@ final class AntragService
         private readonly Versionierung $versionierung,
         private readonly Audit $audit,
         private readonly Einstellungen $einstellungen,
+        private readonly VorlagenService $vorlagen,
         private readonly string $appUrl,
         private readonly string $pepper,
     ) {
@@ -268,35 +269,24 @@ final class AntragService
         string $jahresbeitrag,
     ): void {
         $link = rtrim($this->appUrl, '/') . '/antrag/bestaetigen?token=' . $token;
-        $betrag = number_format((float) $jahresbeitrag, 2, ',', '.') . ' € pro Jahr';
-        $verein = $this->vereinName();
-        $gid = $this->glaeubigerId();
-        $gidText = $gid !== '' ? " (Gläubiger-Identifikationsnummer {$gid})" : '';
+        $betrag = number_format((float) $jahresbeitrag, 2, ',', '.');
 
-        $text = "Guten Tag,\n\n"
-            . "vielen Dank für Ihren Aufnahmeantrag beim {$verein}\n\n"
-            . "Bitte bestätigen Sie Ihre E-Mail-Adresse und Ihren Antrag, indem Sie die folgende Seite öffnen "
-            . "und dort auf »Jetzt bestätigen« klicken:\n\n"
-            . $link . "\n\n"
-            . "Ihr Mitgliedsbeitrag: {$betrag}\n\n"
-            . "SEPA-Lastschriftmandat\n"
-            . "----------------------\n"
-            . "Mit der Bestätigung ermächtigen Sie den {$verein}{$gidText}, den Mitgliedsbeitrag "
-            . "wiederkehrend per SEPA-Lastschrift von Ihrem Konto einzuziehen (IBAN {$ibanMaskiert}, Kontoinhaber "
-            . "{$kontoinhaber}). Zugleich weisen Sie Ihr Kreditinstitut an, die Lastschriften einzulösen. "
-            . "Ihre Mandatsreferenz teilen wir Ihnen nach der Aufnahme mit.\n\n"
-            . "Vor jedem Einzug informieren wir Sie mindestens 14 Kalendertage vorher per E-Mail über Termin und "
-            . "Betrag. Sie können innerhalb von acht Wochen ab Belastung die Erstattung verlangen; es gelten die "
-            . "mit Ihrer Bank vereinbarten Bedingungen.\n\n"
-            . "Wenn Sie diesen Antrag nicht gestellt haben, ignorieren Sie diese E-Mail einfach.\n\n"
-            . "Mit freundlichen Grüßen\nIhr Vorstand des Fördervereins\n"
-            . "https://www.gymnasium-herzogenrath.de/foerderverein";
+        // Betreff/Text aus der (überschreibbaren) Systemvorlage; die HTML-Variante
+        // bleibt als Code-Helfer erhalten (aufwändiges Layout, nicht editierbar).
+        $mail = $this->vorlagen->rendere('doi_bestaetigung', [
+            'bestaetigungslink' => $link,
+            'verein_name'       => $this->vereinName(),
+            'beitrag'           => $betrag,
+            'iban_maskiert'     => $ibanMaskiert,
+            'kontoinhaber'      => $kontoinhaber,
+            'glaeubiger_id'     => $this->glaeubigerId(),
+        ]);
 
         $this->mail->einreihen(
             $empfaenger,
-            'Bitte bestätigen Sie Ihren Aufnahmeantrag',
-            $text,
-            $this->doiMailHtml($link, $betrag, $ibanMaskiert, $kontoinhaber),
+            $mail['betreff'],
+            $mail['text'],
+            $mail['html'] ?? $this->doiMailHtml($link, $betrag . ' € pro Jahr', $ibanMaskiert, $kontoinhaber),
             prioritaet: MailDienst::PRIO_SOFORT,
         );
     }

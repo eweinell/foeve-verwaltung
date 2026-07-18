@@ -1,0 +1,54 @@
+{% extends 'layout.twig' %}
+{% block titel %}Versandaktion{% endblock %}
+{% block inhalt %}
+    <div class="seitenkopf">
+        <div>
+            <h1>Versandaktion #{{ aktion.id }}</h1>
+            <p class="untertitel">{{ aktion.typ }} · {{ aktion.betreff }} · {{ aktion.erstellt_am|date('d.m.Y H:i') }}</p>
+        </div>
+        <a href="/email" class="button button-sekundaer">Zur Übersicht</a>
+    </div>
+
+    <div class="karte eng">
+        <div class="zeile" style="justify-content:space-between">
+            <div>
+                <span class="badge badge-erfolg">{{ aktion.gesendet }} gesendet</span>
+                <span class="badge badge-info">{{ aktion.wartend }} wartend</span>
+                <span class="badge badge-fehler">{{ aktion.fehler }} Fehler</span>
+                <span class="feld-hinweis"> von {{ aktion.anzahl_gesamt }}</span>
+            </div>
+            {% if aktion.fehler > 0 %}
+                <form method="post" action="/email/{{ aktion.id }}/neu-einreihen" style="margin:0">
+                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                    <button class="button button-sekundaer button-klein">Alle Fehler neu einreihen</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tabelle-huelle">
+        <table class="daten">
+            <thead><tr><th>Empfänger</th><th>Status</th><th>Fehler</th><th></th></tr></thead>
+            <tbody>
+                {% for m in mails %}
+                    <tr>
+                        <td>{{ m.empfaenger }}</td>
+                        <td><span class="badge {{ m.status == 'gesendet' ? 'badge-erfolg' : (m.status == 'fehler' ? 'badge-fehler' : 'badge-info') }}">{{ m.status }}</span></td>
+                        <td class="feld-hinweis">{{ m.fehltext }}</td>
+                        <td>
+                            {% if m.status == 'fehler' %}
+                                <form method="post" action="/email/{{ aktion.id }}/neu-einreihen" style="margin:0">
+                                    <input type="hidden" name="{{ csrf_feld }}" value="{{ csrf_token }}">
+                                    <input type="hidden" name="mail_id" value="{{ m.id }}">
+                                    <button class="button button-sekundaer button-klein">Neu einreihen</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center">Keine Mails.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
